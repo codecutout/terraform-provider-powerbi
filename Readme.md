@@ -38,12 +38,12 @@ For *Git Bash for Windows*, at the step of "Adjusting your PATH environment", pl
 
 If you wish to work on the provider, you'll first need [Go](http://www.golang.org) installed on your machine (version 1.13+ is **required**). You'll also need to correctly setup a [GOPATH](http://golang.org/doc/code.html#GOPATH), as well as adding `$GOPATH/bin` to your `$PATH`.
 
-To build you can run:
+### Build
 ```sh
 $ go build
-...
+```
 
-To run tests for the provider you can run:
+### Testing
 ```sh
 $ go test ./...
 ```
@@ -56,11 +56,10 @@ The majority of tests in the provider are Acceptance Tests - which provisions re
 - `POWERBI_USERNAME`
 - `POWERBI_PASSWORD`
 
-To test the plugin with terraform
+### Running with Terraform
 - Place `terraform.exe` in `$GOPATH/bin` (which should be in path)
 - Run `go install` - This will build and deploy `terraform-provider-powerbi.exe` into `$GOPATH/bin`
 - When running `terraform.exe` the Power BI provider will be available
-
 
 ## Authentication and Authorization
 
