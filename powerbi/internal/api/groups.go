@@ -1,11 +1,9 @@
 package api
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"net/http"
 	"net/url"
 	"strconv"
 )
@@ -61,12 +59,7 @@ type DeleteGroupRequest struct {
 // CreateGroup creates new workspace
 func (client *Client) CreateGroup(request CreateGroupRequest) (*CreateGroupResponse, error) {
 
-	data, err := json.Marshal(request)
-	if err != nil {
-		return nil, err
-	}
-
-	resp, err := client.Post("https://api.powerbi.com/v1.0/myorg/groups?workspaceV2=True", "application/json", bytes.NewBuffer(data))
+	resp, err := client.DoJSONRequest("POST", "https://api.powerbi.com/v1.0/myorg/groups?workspaceV2=True", request)
 	if err != nil {
 		return nil, err
 	}
@@ -138,10 +131,6 @@ func (client *Client) GetGroup(request GetGroupRequest) (*GetGroupResponse, erro
 // DeleteGroup deletes a workspace
 func (client *Client) DeleteGroup(request DeleteGroupRequest) error {
 	url := fmt.Sprintf("https://api.powerbi.com/v1.0/myorg/groups/%s", url.PathEscape(request.GroupID))
-	httpRequest, err := http.NewRequest("DELETE", url, nil)
-	if err != nil {
-		return err
-	}
-	_, err = client.Do(httpRequest)
+	_, err := client.DoJSONRequest("DELETE", url, nil)
 	return err
 }
