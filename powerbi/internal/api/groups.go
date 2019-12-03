@@ -1,9 +1,7 @@
 package api
 
 import (
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/url"
 	"strconv"
 )
@@ -59,19 +57,9 @@ type DeleteGroupRequest struct {
 // CreateGroup creates new workspace
 func (client *Client) CreateGroup(request CreateGroupRequest) (*CreateGroupResponse, error) {
 
-	resp, err := client.DoJSONRequest("POST", "https://api.powerbi.com/v1.0/myorg/groups?workspaceV2=True", request)
-	if err != nil {
-		return nil, err
-	}
-
-	respData, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	var respDataObj CreateGroupResponse
-	err = json.Unmarshal(respData, &respDataObj)
-	return &respDataObj, err
+	var respObj CreateGroupResponse
+	err := client.doJSON("POST", "https://api.powerbi.com/v1.0/myorg/groups?workspaceV2=True", request, &respObj)
+	return &respObj, err
 }
 
 // GetGroups returns a list of workspaces the user has access to.
@@ -88,19 +76,10 @@ func (client *Client) GetGroups(request GetGroupsRequest) (*GetGroupsResponse, e
 		queryParams.Add("$skip", strconv.Itoa(request.Skip))
 	}
 
-	resp, err := client.Get("https://api.powerbi.com/v1.0/myorg/groups?" + queryParams.Encode())
-	if err != nil {
-		return nil, err
-	}
+	var respObj GetGroupsResponse
+	err := client.doJSON("GET", "https://api.powerbi.com/v1.0/myorg/groups?"+queryParams.Encode(), nil, &respObj)
 
-	respData, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	var respDataObj GetGroupsResponse
-	err = json.Unmarshal(respData, &respDataObj)
-	return &respDataObj, err
+	return &respObj, err
 }
 
 // GetGroup returns a single workspace
@@ -131,6 +110,5 @@ func (client *Client) GetGroup(request GetGroupRequest) (*GetGroupResponse, erro
 // DeleteGroup deletes a workspace
 func (client *Client) DeleteGroup(request DeleteGroupRequest) error {
 	url := fmt.Sprintf("https://api.powerbi.com/v1.0/myorg/groups/%s", url.PathEscape(request.GroupID))
-	_, err := client.DoJSONRequest("DELETE", url, nil)
-	return err
+	return client.doJSON("DELETE", url, nil, nil)
 }

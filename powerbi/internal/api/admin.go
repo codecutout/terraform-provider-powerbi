@@ -15,7 +15,5 @@ type UpdateGroupAsAdminRequest struct {
 func (client *Client) UpdateGroupAsAdmin(request UpdateGroupAsAdminRequest) error {
 
 	url := fmt.Sprintf("https://api.powerbi.com/v1.0/myorg/admin/groups/%s", url.PathEscape(request.GroupID))
-	_, err := client.DoJSONRequest("PATCH", url, request)
-
-	return err
+	return client.doJSON("PATCH", url, request, nil)
 }

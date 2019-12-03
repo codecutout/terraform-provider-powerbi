@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"github.com/hashicorp/go-cleanhttp"
+	"io/ioutil"
 	"net/http"
 )
 
@@ -35,19 +36,22 @@ func NewClient(tenant string, clientID string, clientSecret string, username str
 	}, nil
 }
 
-// DoJSONRequest performs a request with JSON body
-func (client *Client) DoJSONRequest(method string, url string, body interface{}) (*http.Response, error) {
+func (client *Client) doJSON(method string, url string, body interface{}, response interface{}) error {
 
-	httpRequest, err := NewJSONRequest(method, url, body)
+	httpRequest, err := newJSONRequest(method, url, body)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	return client.Do(httpRequest)
+	httpResponse, err := client.Do(httpRequest)
+	if err != nil {
+		return err
+	}
+
+	return newJSONResponse(httpResponse, response)
 }
 
-// NewJSONRequest creates a new request with a JSON body
-func NewJSONRequest(method string, url string, body interface{}) (*http.Request, error) {
+func newJSONRequest(method string, url string, body interface{}) (*http.Request, error) {
 
 	// if we have no body so can create a simple request
 	if body == nil {
@@ -66,4 +70,17 @@ func NewJSONRequest(method string, url string, body interface{}) (*http.Request,
 	httpRequest.Header.Set("content-type", "application/json")
 
 	return httpRequest, nil
+}
+
+func newJSONResponse(httpResponse *http.Response, response interface{}) error {
+	if response == nil {
+		return nil
+	}
+
+	httpResponseData, err := ioutil.ReadAll(httpResponse.Body)
+	if err != nil {
+		return err
+	}
+
+	return json.Unmarshal(httpResponseData, response)
 }
