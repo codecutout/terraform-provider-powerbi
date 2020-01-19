@@ -46,6 +46,7 @@ func Provider() terraform.ResourceProvider {
 
 		ResourcesMap: map[string]*schema.Resource{
 			"powerbi_workspace": ResourceWorkspace(),
+			"powerbi_pbix":      ResourcePBIX(),
 		},
 
 		ConfigureFunc: providerConfigure,

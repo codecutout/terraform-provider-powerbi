@@ -27,8 +27,10 @@ type roundTripperErrorOnUnsuccessful struct {
 func (err HTTPUnsuccessfulError) Error() string {
 
 	message := fmt.Sprintf("status code '%s'", err.Response.Status)
-	if err.ErrorBody != nil {
+	if err.ErrorBody != nil && err.ErrorBody.Code != "" && err.ErrorBody.Message != "" {
 		message += fmt.Sprintf(" with code '%s' and message '%s'", err.ErrorBody.Code, err.ErrorBody.Message)
+	} else if err.ErrorBody != nil && err.ErrorBody.Code != "" {
+		message += fmt.Sprintf(" with code '%s'", err.ErrorBody.Code)
 	}
 	return message
 }
