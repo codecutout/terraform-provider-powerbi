@@ -91,12 +91,6 @@ type GetImportResponseReport struct {
 	WebURL     string
 }
 
-// WaitForImportToSucceedRequest represents the request to wait until an import succeeds
-type WaitForImportToSucceedRequest struct {
-	ImportID string
-	Timeout  time.Duration
-}
-
 // PostImportInGroup creates an import wihtin the the specified group
 func (client *Client) PostImportInGroup(request PostImportInGroupRequest) (*PostImportInGroupResponse, error) {
 
@@ -116,28 +110,28 @@ func (client *Client) PostImportInGroup(request PostImportInGroupRequest) (*Post
 }
 
 // WaitForImportToSucceed waits until the specified import
-func (client *Client) WaitForImportToSucceed(request WaitForImportToSucceedRequest) error {
+func (client *Client) WaitForImportToSucceed(importID string, timeout time.Duration) (*GetImportResponse, error) {
 	ticker := time.NewTicker(time.Second)
 	defer ticker.Stop()
 
 	started := time.Now()
 	for {
 		im, err := client.GetImport(GetImportRequest{
-			ImportID: request.ImportID,
+			ImportID: importID,
 		})
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		if im.ImportState == "Succeeded" {
-			return nil
+			return im, nil
 		} else if im.ImportState != "Publishing" {
-			return fmt.Errorf("Import completed with invalid state '%s'", im.ImportState)
+			return im, fmt.Errorf("Import completed with invalid state '%s'", im.ImportState)
 		}
 
 		now := <-ticker.C
-		if now.Sub(started) > request.Timeout {
-			return fmt.Errorf("Timed out waiting for import to complete. Import taking longer than %v seconds", request.Timeout.Seconds())
+		if now.Sub(started) > timeout {
+			return nil, fmt.Errorf("Timed out waiting for import to complete. Import taking longer than %v seconds", timeout.Seconds())
 		}
 	}
 }

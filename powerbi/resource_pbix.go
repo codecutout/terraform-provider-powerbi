@@ -50,6 +50,18 @@ func ResourcePBIX() *schema.Resource {
 				Description: "Seconds to wait while publishing the pbix",
 				Default:     30,
 			},
+			"report_id": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
+				Description: "The ID for the report that was deployed as part of the pbix",
+			},
+			"dataset_id": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Computed:    true,
+				Description: "The ID for the dataset that was deployed as part of the pbix",
+			},
 		},
 	}
 }
@@ -74,17 +86,22 @@ func createPBIX(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
-	if client.WaitForImportToSucceed(api.WaitForImportToSucceedRequest{
-		ImportID: resp.ID,
-		Timeout:  time.Duration(d.Get("timeout_seconds").(int)) * time.Second,
-	}) != nil {
+	im, err := client.WaitForImportToSucceed(resp.ID, time.Duration(d.Get("timeout_seconds").(int))*time.Second)
+	if err != nil {
 		return err
 	}
 
-	d.SetId(resp.ID)
+	d.SetId(im.ID)
+	if len(im.Reports) >= 1 {
+		d.Set("report_id", im.Reports[0].ID)
+	}
+	if len(im.Datasets) >= 1 {
+		d.Set("dataset_id", im.Datasets[0].ID)
+	}
 	d.Set("workspace", d.Get("workspace").(string))
 	d.Set("name", d.Get("name").(string))
 	d.Set("content_base64", d.Get("content_base64").(string))
+
 	return nil
 
 }
@@ -102,7 +119,25 @@ func updatePBIX(d *schema.ResourceData, meta interface{}) error {
 }
 
 func deletePBIX(d *schema.ResourceData, meta interface{}) error {
-	//client := meta.(*api.Client)
+	client := meta.(*api.Client)
+
+	if reportID := d.Get("report_id"); reportID != nil {
+		err := client.DeleteReport(api.DeleteReportRequest{
+			ReportID: reportID.(string),
+		})
+		if err != nil {
+			return err
+		}
+	}
+
+	if datasetID := d.Get("dataset_id"); datasetID != nil {
+		err := client.DeleteDataset(api.DeleteDatasetRequest{
+			DatasetID: datasetID.(string),
+		})
+		if err != nil {
+			return err
+		}
+	}
 
 	return nil
 }

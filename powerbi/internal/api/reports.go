@@ -24,6 +24,11 @@ type GetReportsInGroupResponseItem struct {
 	EmbedURL  string
 }
 
+// DeleteReportRequest represents the request to delete a report
+type DeleteReportRequest struct {
+	ReportID string
+}
+
 // GetReportsInGroup returns a list of reports within the specified group.
 func (client *Client) GetReportsInGroup(request GetReportsInGroupRequest) (*GetReportsInGroupResponse, error) {
 
@@ -32,4 +37,13 @@ func (client *Client) GetReportsInGroup(request GetReportsInGroupRequest) (*GetR
 	err := client.doJSON("GET", url, nil, &respObj)
 
 	return &respObj, err
+}
+
+// DeleteReport deletes a dataset.
+func (client *Client) DeleteReport(request DeleteReportRequest) error {
+
+	url := fmt.Sprintf("https://api.powerbi.com/v1.0/myorg/reports/%s", url.PathEscape(request.ReportID))
+	err := client.doJSON("DELETE", url, nil, nil)
+
+	return err
 }
