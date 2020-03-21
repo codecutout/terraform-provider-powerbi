@@ -18,13 +18,6 @@ type CreateGroupResponse struct {
 	Name                  string
 }
 
-// GetGroupsRequest represents the request to the GetGroups API
-type GetGroupsRequest struct {
-	Filter string
-	Top    int
-	Skip   int
-}
-
 // GetGroupsResponse represents the response from the GetGroups API
 type GetGroupsResponse struct {
 	Value []GetGroupsResponseItem
@@ -37,21 +30,11 @@ type GetGroupsResponseItem struct {
 	Name                  string
 }
 
-// GetGroupRequest represents the request to get an individual group
-type GetGroupRequest struct {
-	GroupID string
-}
-
 // GetGroupResponse represents the details when getting an individual group
 type GetGroupResponse struct {
 	ID                    string
 	IsOnDedicatedCapacity bool
 	Name                  string
-}
-
-// DeleteGroupRequest represents the request to the DeleteGroup API
-type DeleteGroupRequest struct {
-	GroupID string
 }
 
 // CreateGroup creates new workspace
@@ -63,17 +46,17 @@ func (client *Client) CreateGroup(request CreateGroupRequest) (*CreateGroupRespo
 }
 
 // GetGroups returns a list of workspaces the user has access to.
-func (client *Client) GetGroups(request GetGroupsRequest) (*GetGroupsResponse, error) {
+func (client *Client) GetGroups(filter string, top int, skip int) (*GetGroupsResponse, error) {
 
 	queryParams := url.Values{}
-	if request.Filter != "" {
-		queryParams.Add("$filter", request.Filter)
+	if filter != "" {
+		queryParams.Add("$filter", filter)
 	}
-	if request.Top != 0 {
-		queryParams.Add("$top", strconv.Itoa(request.Top))
+	if top > 0 {
+		queryParams.Add("$top", strconv.Itoa(top))
 	}
-	if request.Skip != 0 {
-		queryParams.Add("$skip", strconv.Itoa(request.Skip))
+	if skip > 0 {
+		queryParams.Add("$skip", strconv.Itoa(skip))
 	}
 
 	var respObj GetGroupsResponse
@@ -83,13 +66,11 @@ func (client *Client) GetGroups(request GetGroupsRequest) (*GetGroupsResponse, e
 }
 
 // GetGroup returns a single workspace
-func (client *Client) GetGroup(request GetGroupRequest) (*GetGroupResponse, error) {
+func (client *Client) GetGroup(groupID string) (*GetGroupResponse, error) {
 
 	// There is no endpoint to get a single workspace, so we will search for
 	// all workspaces with a specific id
-	groups, err := client.GetGroups(GetGroupsRequest{
-		Filter: fmt.Sprintf("id eq '%s'", request.GroupID),
-	})
+	groups, err := client.GetGroups(fmt.Sprintf("id eq '%s'", groupID), -1, 0)
 
 	if err != nil {
 		return nil, err
@@ -108,7 +89,7 @@ func (client *Client) GetGroup(request GetGroupRequest) (*GetGroupResponse, erro
 }
 
 // DeleteGroup deletes a workspace
-func (client *Client) DeleteGroup(request DeleteGroupRequest) error {
-	url := fmt.Sprintf("https://api.powerbi.com/v1.0/myorg/groups/%s", url.PathEscape(request.GroupID))
+func (client *Client) DeleteGroup(groupID string) error {
+	url := fmt.Sprintf("https://api.powerbi.com/v1.0/myorg/groups/%s", url.PathEscape(groupID))
 	return client.doJSON("DELETE", url, nil, nil)
 }

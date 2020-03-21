@@ -5,11 +5,6 @@ import (
 	"net/url"
 )
 
-// GetDatasetsInGroupRequest represents the request to get datasets in a group.
-type GetDatasetsInGroupRequest struct {
-	GroupID string
-}
-
 // GetDatasetsInGroupResponse represents the details when getting a datasets in a group.
 type GetDatasetsInGroupResponse struct {
 	Value []GetDatasetsInGroupResponseItem
@@ -27,26 +22,129 @@ type GetDatasetsInGroupResponseItem struct {
 	TargetStorageMode                string
 }
 
-// DeleteDatasetRequest represents the request to delete a dataset
-type DeleteDatasetRequest struct {
-	DatasetID string
+// GetParametersResponse represents the response from get parameters
+type GetParametersResponse struct {
+	Value []GetParametersResponseItem
+}
+
+// GetParametersResponseItem represents a single parameter
+type GetParametersResponseItem struct {
+	Name         string
+	Type         string
+	IsRequired   bool
+	CurrentValue string
+}
+
+// UpdateParametersRequest represents the request to update parameters
+type UpdateParametersRequest struct {
+	UpdateDetails []UpdateParametersRequestItem
+}
+
+// UpdateParametersRequestItem represents a single parameter update
+type UpdateParametersRequestItem struct {
+	Name     string
+	NewValue string
+}
+
+// GetDatasourcesResponse represents the response from get datasources
+type GetDatasourcesResponse struct {
+	Value []GetDatasourcesResponseItem
+}
+
+// GetDatasourcesResponseItem represents a single datasource
+type GetDatasourcesResponseItem struct {
+	DatasourceID      string
+	DatasourceType    string
+	GatewayID         string
+	Name              string
+	CopnnectionString string
+	ConnectionDetails GetDatasourcesResponseItemConnectionDetails
+}
+
+// GetDatasourcesResponseItemConnectionDetails represents connection details for a single datasource
+type GetDatasourcesResponseItemConnectionDetails struct {
+	Database *string
+	Server   *string
+	URL      *string
+}
+
+// UpdateDatasourcesRequest represents the request to update datasources
+type UpdateDatasourcesRequest struct {
+	UpdateDetails []UpdateDatasourcesRequestItem
+}
+
+// UpdateDatasourcesRequestItem represents a single datasource update
+type UpdateDatasourcesRequestItem struct {
+	DatasourceSelector UpdateDatasourcesRequestItemDatasourceSelector
+	ConnectionDetails  UpdateDatasourcesRequestItemConnectionDetails
+}
+
+// UpdateDatasourcesRequestItemDatasourceSelector represents a query to select a datasource
+type UpdateDatasourcesRequestItemDatasourceSelector struct {
+	DatasourceType    string
+	ConnectionDetails UpdateDatasourcesRequestItemConnectionDetails
+}
+
+// UpdateDatasourcesRequestItemConnectionDetails represents connection details for a single datasource
+type UpdateDatasourcesRequestItemConnectionDetails struct {
+	Database *string
+	Server   *string
+	URL      *string
 }
 
 // GetDatasetsInGroup returns a list of datasets within the specified group.
-func (client *Client) GetDatasetsInGroup(request GetDatasetsInGroupRequest) (*GetDatasetsInGroupResponse, error) {
+func (client *Client) GetDatasetsInGroup(groupID string) (*GetDatasetsInGroupResponse, error) {
 
 	var respObj GetDatasetsInGroupResponse
-	url := fmt.Sprintf("https://api.powerbi.com/v1.0/myorg/groups/%s/datasets", url.PathEscape(request.GroupID))
+	url := fmt.Sprintf("https://api.powerbi.com/v1.0/myorg/groups/%s/datasets", url.PathEscape(groupID))
 	err := client.doJSON("GET", url, nil, &respObj)
 
 	return &respObj, err
 }
 
 // DeleteDataset deletes a dataset.
-func (client *Client) DeleteDataset(request DeleteDatasetRequest) error {
+func (client *Client) DeleteDataset(datasetID string) error {
 
-	url := fmt.Sprintf("https://api.powerbi.com/v1.0/myorg/datasets/%s", url.PathEscape(request.DatasetID))
+	url := fmt.Sprintf("https://api.powerbi.com/v1.0/myorg/datasets/%s", url.PathEscape(datasetID))
 	err := client.doJSON("DELETE", url, nil, nil)
+
+	return err
+}
+
+// GetParameters gets parameters in a dataset.
+func (client *Client) GetParameters(datasetID string) (*GetParametersResponse, error) {
+
+	var respObj GetParametersResponse
+	url := fmt.Sprintf("https://api.powerbi.com/v1.0/myorg/datasets/%s/parameters", url.PathEscape(datasetID))
+	err := client.doJSON("GET", url, nil, &respObj)
+
+	return &respObj, err
+}
+
+// UpdateParameters updates parameters in a dataset.
+func (client *Client) UpdateParameters(datasetID string, request UpdateParametersRequest) error {
+
+	url := fmt.Sprintf("https://api.powerbi.com/v1.0/myorg/datasets/%s/Default.UpdateParameters", url.PathEscape(datasetID))
+	err := client.doJSON("POST", url, &request, nil)
+
+	return err
+}
+
+// GetDatasources gets datasources in a dataset.
+func (client *Client) GetDatasources(datasetID string) (*GetDatasourcesResponse, error) {
+
+	var respObj GetDatasourcesResponse
+	url := fmt.Sprintf("https://api.powerbi.com/v1.0/myorg/datasets/%s/datasources", url.PathEscape(datasetID))
+	err := client.doJSON("GET", url, nil, &respObj)
+
+	return &respObj, err
+}
+
+// UpdateDatasources updates datasources in a dataset.
+func (client *Client) UpdateDatasources(datasetID string, request UpdateDatasourcesRequest) error {
+
+	url := fmt.Sprintf("https://api.powerbi.com/v1.0/myorg/datasets/%s/Default.UpdateDatasources", url.PathEscape(datasetID))
+	err := client.doJSON("POST", url, &request, nil)
 
 	return err
 }

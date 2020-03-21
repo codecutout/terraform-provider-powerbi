@@ -43,9 +43,7 @@ func createWorkspace(d *schema.ResourceData, meta interface{}) error {
 func readWorkspace(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*api.Client)
 
-	workspace, err := client.GetGroup(api.GetGroupRequest{
-		GroupID: d.Id(),
-	})
+	workspace, err := client.GetGroup(d.Id())
 	if err != nil {
 		return err
 	}
@@ -77,7 +75,5 @@ func updateWorkspace(d *schema.ResourceData, meta interface{}) error {
 func deleteWorkspace(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*api.Client)
 
-	return client.DeleteGroup(api.DeleteGroupRequest{
-		GroupID: d.Id(),
-	})
+	return client.DeleteGroup(d.Id())
 }

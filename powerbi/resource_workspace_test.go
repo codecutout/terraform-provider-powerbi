@@ -62,9 +62,7 @@ func testCheckWorkspaceExistsWithName(rn string, expectedName string) resource.T
 		}
 
 		client := testAccProvider.Meta().(*api.Client)
-		workspace, err := client.GetGroup(api.GetGroupRequest{
-			GroupID: rs.Primary.ID,
-		})
+		workspace, err := client.GetGroup(rs.Primary.ID)
 		if err != nil {
 			return err
 		}
@@ -93,9 +91,7 @@ func testAccCheckPowerbiWorkspaceDestroy(s *terraform.State) error {
 		}
 
 		// Retrieve our workspace by API lookup
-		workspace, err := client.GetGroup(api.GetGroupRequest{
-			GroupID: rs.Primary.ID,
-		})
+		workspace, err := client.GetGroup(rs.Primary.ID)
 		if err != nil {
 			return err
 		}

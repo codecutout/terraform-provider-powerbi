@@ -5,11 +5,6 @@ import (
 	"net/url"
 )
 
-// GetReportsInGroupRequest represents the request to get reports in a group.
-type GetReportsInGroupRequest struct {
-	GroupID string
-}
-
 // GetReportsInGroupResponse represents the details when getting a report in a group.
 type GetReportsInGroupResponse struct {
 	Value []GetReportsInGroupResponseItem
@@ -24,25 +19,20 @@ type GetReportsInGroupResponseItem struct {
 	EmbedURL  string
 }
 
-// DeleteReportRequest represents the request to delete a report
-type DeleteReportRequest struct {
-	ReportID string
-}
-
 // GetReportsInGroup returns a list of reports within the specified group.
-func (client *Client) GetReportsInGroup(request GetReportsInGroupRequest) (*GetReportsInGroupResponse, error) {
+func (client *Client) GetReportsInGroup(groupID string) (*GetReportsInGroupResponse, error) {
 
 	var respObj GetReportsInGroupResponse
-	url := fmt.Sprintf("https://api.powerbi.com/v1.0/myorg/groups/%s/reports", url.PathEscape(request.GroupID))
+	url := fmt.Sprintf("https://api.powerbi.com/v1.0/myorg/groups/%s/reports", url.PathEscape(groupID))
 	err := client.doJSON("GET", url, nil, &respObj)
 
 	return &respObj, err
 }
 
 // DeleteReport deletes a dataset.
-func (client *Client) DeleteReport(request DeleteReportRequest) error {
+func (client *Client) DeleteReport(reportID string) error {
 
-	url := fmt.Sprintf("https://api.powerbi.com/v1.0/myorg/reports/%s", url.PathEscape(request.ReportID))
+	url := fmt.Sprintf("https://api.powerbi.com/v1.0/myorg/reports/%s", url.PathEscape(reportID))
 	err := client.doJSON("DELETE", url, nil, nil)
 
 	return err

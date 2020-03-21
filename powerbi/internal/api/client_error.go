@@ -14,6 +14,11 @@ type HTTPUnsuccessfulError struct {
 	ErrorBody *ErrorBody
 }
 
+// ErrorResponse represents the response when the Power BI API returns errors
+type ErrorResponse struct {
+	Error ErrorBody
+}
+
 // ErrorBody represents the error returend in the body of Power BI API requests
 type ErrorBody struct {
 	Code    string
@@ -44,15 +49,15 @@ func (h roundTripperErrorOnUnsuccessful) RoundTrip(req *http.Request) (*http.Res
 	}
 
 	// try and read the body to get the formatted error
-	var errorBody ErrorBody
+	var errorResponse ErrorResponse
 	if resp.Body != http.NoBody {
 		respBody, _ := ioutil.ReadAll(resp.Body)
-		json.Unmarshal(respBody, &errorBody)
+		json.Unmarshal(respBody, &errorResponse)
 	}
 
 	return resp, HTTPUnsuccessfulError{
 		Request:   req,
 		Response:  resp,
-		ErrorBody: &errorBody,
+		ErrorBody: &errorResponse.Error,
 	}
 }
