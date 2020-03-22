@@ -2,7 +2,7 @@ package powerbi
 
 import (
 	"fmt"
-	"github.com/alex-davies/terraform-provider-powerbi/powerbi/internal/api"
+	"github.com/codecutout/terraform-provider-powerbi/powerbi/internal/api"
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/terraform"
 	"testing"

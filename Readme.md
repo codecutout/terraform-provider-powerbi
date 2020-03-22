@@ -61,6 +61,3 @@ The majority of tests in the provider are Acceptance Tests - which provisions re
 - Run `go install` - This will build and deploy `terraform-provider-powerbi.exe` into `$GOPATH/bin`
 - When running `terraform.exe` the Power BI provider will be available
 
-## Authentication and Authorization
-
-TODO
