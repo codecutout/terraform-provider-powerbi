@@ -1,0 +1,44 @@
+version: build.{build}-{branch}
+environment:
+  TF_ACC: 1
+  POWERBI_TENANT_ID:
+    secure: 6hS9YiKUSupL9ZlzhgkVsCoSMUmHZXZkqJkH89itiBRcGdFZ5x0Kp7bevVaqDCcc
+  POWERBI_CLIENT_ID:
+    secure: 0B4c4WBNdUBtH18ckJVGN0hEwvIpCxdJOo+vhVWSW+gxWIUUCdH0+vyYp0CyJ/Eb
+  POWERBI_CLIENT_SECRET:
+    secure: asAqoO5uam6uLKftR+vyjtHMlCgyok0GsDvQLr6APa/GecN/w4SqGcPkUa41WgHP
+  POWERBI_USERNAME:
+    secure: k0XEfFDwmSjJPdzNODt3zUTv6v99CgpgMyWUI2t3hg23qkfK+M+Yh0qX0YGmqhYR
+  POWERBI_PASSWORD:
+    secure: W0vvTX8sNHFLHrI6ABN3hQ==
+  matrix:
+  - GOOS: windows
+    GOARCH: amd64
+  - GOOS: linux
+    GOARCH: amd64
+build_script:
+- pwsh: >-
+    if ($env:APPVEYOR_REPO_TAG -eq "true") {
+        Write-Host "Building release from tag '$env:APPVEYOR_REPO_TAG_NAME'"
+        Update-AppveyorBuild -Version "$env:APPVEYOR_REPO_TAG_NAME"
+        $env:APPVEYOR_BUILD_VERSION = $env:APPVEYOR_REPO_TAG_NAME
+    }
+
+
+    go build -o bin/$($env:GOOS)_$($env:GOARCH)/terraform-provider-powerbi_$env:APPVEYOR_BUILD_VERSION main.go
+test_script:
+- pwsh: go test -v ./...
+artifacts:
+- path: bin
+  name: $(GOOS)_$(GOARCH).terraform-provider-powerbi_$(APPVEYOR_BUILD_VERSION)
+deploy:
+- provider: GitHub
+  tag: $(APPVEYOR_REPO_TAG_NAME)
+  auth_token:
+    secure: VpsAsWfet05ak8vyY7x1N9QcXXidnkXCiUvRn+xdZKLK89wWIDj3Yg5bzF/47dDb
+  artifact: $(GOOS)_$(GOARCH).terraform-provider-powerbi_$(APPVEYOR_BUILD_VERSION)
+  draft: false
+  prerelease: true
+  force_update: true
+  on:
+    APPVEYOR_REPO_TAG: true

@@ -1,4 +1,8 @@
+
+
 # Terraform Provider for Power BI
+
+[![Build status](https://ci.appveyor.com/api/projects/status/lcrfr9no2b7ufu87/branch/master?svg=true)](https://ci.appveyor.com/project/codecutout/terraform-provider-powerbi/branch/master)
 
 The Power BI Provider supports Terraform 0.12.x. It may still function on earlier versions but has only been tested on 0.12.x
 
@@ -22,8 +26,30 @@ resource "powerbi_workspace" "example" {
 }
 
 # Create a pbix within the workspace
-TODO
+resource "powerbi_pbix" "example" {
+	workspace = "${powerbi_workspace.example.id}"
+	name = "My PBIX"
+	source = "./my-pbix.pbix"
+	source_hash = "${filemd5(".my-pbix.pbix")}"
+	datasource {
+		type = "OData"
+		url = "https://services.odata.org/V3/(S(kbiqo1qkby04vnobw0li0fcp))/OData/OData.svc"
+		original_url = "https://services.odata.org/V3/OData/OData.svc"
+	}
+}
 ```
+
+## Installing
+
+1. From the [releases](/releases) section download the zip file for your desired version, operating system and architecture
+2. Extract the zip file into `%APPDATA%\terraform.d\plugins` for windows, or `~/.terraform.d/plugins` for other systems
+3. `terraform init` should now detect usage of the provider and apply the plugin
+
+Further details about installing terraform plugs can be found at https://www.terraform.io/docs/plugins/basics.html#installing-plugins
+
+## Documentation
+Provider and resources properties and example usages can be found in this repositories [docs](docs) folder
+
 ## Developer Requirements
 
 * [Terraform](https://www.terraform.io/downloads.html) version 0.12.x +
@@ -40,7 +66,13 @@ If you wish to work on the provider, you'll first need [Go](http://www.golang.or
 
 ### Build
 ```sh
-$ go build
+$ go build main.go
+```
+
+### Documentation generation
+Documentation markdown files are partly generated from terraform schema definitions. To regenreate the documentation from updated schema run
+``` sh
+$ go run docgen.go
 ```
 
 ### Testing
