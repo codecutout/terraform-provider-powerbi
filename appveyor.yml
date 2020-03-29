@@ -27,7 +27,7 @@ build_script:
 
     go build -o bin/$($env:GOOS)_$($env:GOARCH)/terraform-provider-powerbi_$env:APPVEYOR_BUILD_VERSION main.go
 test_script:
-- pwsh: go test -v ./...
+- cmd: go test -v ./...
 artifacts:
 - path: bin
   name: $(GOOS)_$(GOARCH).terraform-provider-powerbi_$(APPVEYOR_BUILD_VERSION)
