@@ -69,13 +69,13 @@ A `parameter` block supports the following:
 * `value` - (Required) The parameter value.
 ---
 A `datasource` block supports the following:
+* `server` - (Optional) The server name, if applicable for the type of datasource.
+* `url` - (Optional) The service URL, if applicable for the type of datasource.
 * `original_database` - (Optional) The database name as configured in the PBIX, if applicable for the type of datasource This will be the value replaced with the value in the 'databsase' field.
 * `original_server` - (Optional) The server name as configured in the PBIX, if applicable for the type of datasource. This will be the value replaced with the value in the 'server' field.
 * `original_url` - (Optional) The service URL as configured in the PBIX, if applicable for the type of datasource. This will be the value replaced with the value in the 'url' field.
 * `type` - (Optional) The type of datasource. For example web, sql.
 * `database` - (Optional) The database name, if applicable for the type of datasource.
-* `server` - (Optional) The server name, if applicable for the type of datasource.
-* `url` - (Optional) The service URL, if applicable for the type of datasource.
 <!-- /docgen -->
 
 ## Attributes Reference

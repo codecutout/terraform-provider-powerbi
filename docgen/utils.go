@@ -65,8 +65,6 @@ func toMap(in interface{}) (map[string]interface{}, error) {
 	}
 
 	for i := 0; i < v.NumField(); i++ {
-		fi := v.Field(i)
-		fmt.Printf("%v, %v", v.Type().Field(i).Name, fi)
 		if v.Field(i).CanInterface() {
 			out[v.Type().Field(i).Name] = v.Field(i).Interface()
 		}
