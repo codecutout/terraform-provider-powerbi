@@ -3,10 +3,12 @@ package api
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/hashicorp/go-cleanhttp"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strings"
+	"sync"
 )
 
 type tokenResponse struct {
@@ -15,12 +17,49 @@ type tokenResponse struct {
 
 type roundTripperBearerToken struct {
 	innerRoundTripper http.RoundTripper
-	token             string
+	tenant            string
+	clientID          string
+	clientSecret      string
+	username          string
+	password          string
+	tokenCache        *roundTripperBearerTokenCache
+}
+
+type roundTripperBearerTokenCache struct {
+	mux   sync.Mutex
+	token string
 }
 
 func (rt roundTripperBearerToken) RoundTrip(req *http.Request) (*http.Response, error) {
 	newRequest := *req
-	newRequest.Header.Set("Authorization", "Bearer "+rt.token)
+
+	if rt.tokenCache.token == "" {
+		err := func() error {
+			rt.tokenCache.mux.Lock()
+			defer rt.tokenCache.mux.Unlock()
+
+			if rt.tokenCache.token == "" {
+
+				// create own http client so we dont try to add token to request to get tokens
+				httpClient := cleanhttp.DefaultClient()
+				httpClient.Transport = roundTripperErrorOnUnsuccessful{
+					innerRoundTripper: httpClient.Transport,
+				}
+
+				token, err := getAuthToken(httpClient, rt.tenant, rt.clientID, rt.clientSecret, rt.username, rt.password)
+				if err != nil {
+					return err
+				}
+				rt.tokenCache.token = token
+			}
+			return nil
+		}()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	newRequest.Header.Set("Authorization", "Bearer "+rt.tokenCache.token)
 
 	return rt.innerRoundTripper.RoundTrip(&newRequest)
 }

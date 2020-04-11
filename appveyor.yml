@@ -8,9 +8,9 @@ environment:
   POWERBI_CLIENT_SECRET:
     secure: asAqoO5uam6uLKftR+vyjtHMlCgyok0GsDvQLr6APa/GecN/w4SqGcPkUa41WgHP
   POWERBI_USERNAME:
-    secure: k0XEfFDwmSjJPdzNODt3zUTv6v99CgpgMyWUI2t3hg23qkfK+M+Yh0qX0YGmqhYR
+    secure: l4QpQQoZv7NnLSEyzKwLzSZFMQRkWOFpd/Yfp1RqwXMgEbl4LyN7DXDZjvzCr5+e
   POWERBI_PASSWORD:
-    secure: W0vvTX8sNHFLHrI6ABN3hQ==
+    secure: 5z0At8R96g/HOEEvlJVjcw==
   matrix:
   - GOOS: windows
     GOARCH: amd64

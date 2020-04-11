@@ -21,17 +21,15 @@ func NewClient(tenant string, clientID string, clientSecret string, username str
 
 	httpClient := cleanhttp.DefaultClient()
 
-	authToken, err := getAuthToken(httpClient, tenant, clientID, clientSecret, username, password)
-	if err != nil {
-		return nil, err
-	}
-
 	// add default header for all future requests
-	httpClient.Transport = roundTripperErrorOnUnsuccessful{
-		roundTripperBearerToken{
-			innerRoundTripper: httpClient.Transport,
-			token:             authToken,
-		},
+	httpClient.Transport = roundTripperBearerToken{
+		innerRoundTripper: roundTripperErrorOnUnsuccessful{httpClient.Transport},
+		tenant:            tenant,
+		clientID:          clientID,
+		clientSecret:      clientSecret,
+		username:          username,
+		password:          password,
+		tokenCache:        &roundTripperBearerTokenCache{},
 	}
 
 	return &Client{

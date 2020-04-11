@@ -2,7 +2,7 @@ package powerbi
 
 import (
 	"github.com/codecutout/terraform-provider-powerbi/powerbi/internal/api"
-	"github.com/hashicorp/terraform/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	"io"
 	"os"
 	"time"
