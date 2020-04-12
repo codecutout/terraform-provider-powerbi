@@ -19,9 +19,9 @@ provider "powerbi" {
 ## Argument Reference
 The following arguments are supported:
 <!-- docgen:NonComputedParameters -->
-* `username` - (Required) The username for the a Power BI user to use for performing Power BI REST API operations. Power BI only supports delegate permissions so a real user must be specified. This can also be sourced from the `POWERBI_USERNAME` Environment Variable.
-* `password` - (Required) The password for the a Power BI user to use for performing Power BI REST API operations. Power BI only supports delegate permissions so a real user must be specified. This can also be sourced from the `POWERBI_PASSWORD` Environment Variable.
-* `tenant_id` - (Required) The Tenant ID for the tenant which contains the Azure Active Directory App Registration to use for performing Power BI REST API operations. This can also be sourced from the `POWERBI_TENANT_ID` Environment Variable.
 * `client_id` - (Required) Also called Application ID. The Client ID for the Azure Active Directory App Registration to use for performing Power BI REST API operations. This can also be sourced from the `POWERBI_CLIENT_ID` Environment Variable.
 * `client_secret` - (Required) Also called Application Secret. The Client Secret for the Azure Active Directory App Registration to use for performing Power BI REST API operations. This can also be sourced from the `POWERBI_CLIENT_SECRET` Environment Variable.
+* `password` - (Required) The password for the a Power BI user to use for performing Power BI REST API operations. Power BI only supports delegate permissions so a real user must be specified. This can also be sourced from the `POWERBI_PASSWORD` Environment Variable.
+* `tenant_id` - (Required) The Tenant ID for the tenant which contains the Azure Active Directory App Registration to use for performing Power BI REST API operations. This can also be sourced from the `POWERBI_TENANT_ID` Environment Variable.
+* `username` - (Required) The username for the a Power BI user to use for performing Power BI REST API operations. Power BI only supports delegate permissions so a real user must be specified. This can also be sourced from the `POWERBI_USERNAME` Environment Variable.
 <!-- /docgen -->

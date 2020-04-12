@@ -27,7 +27,7 @@ resource "powerbi_workspace" "example" {
 
 # Create a pbix within the workspace
 resource "powerbi_pbix" "example" {
-	workspace = "${powerbi_workspace.example.id}"
+	workspace_id = "${powerbi_workspace.example.id}"
 	name = "My PBIX"
 	source = "./my-pbix.pbix"
 	source_hash = "${filemd5(".my-pbix.pbix")}"
@@ -72,12 +72,12 @@ $ go build
 ### Documentation generation
 Documentation markdown files are partly generated from terraform schema definitions. To regenreate the documentation from updated schema run
 ``` sh
-$ go run docgen/cmd
+$ go run docgen/cmd/main.go
 ```
 
 ### Testing
 ```sh
-$ go test ./...
+$ go test -v ./...
 ```
 
 The majority of tests in the provider are Acceptance Tests - which provisions real resources in power BI. It's possible to run the acceptance tests with the above command by setting the following enviornment variables: 

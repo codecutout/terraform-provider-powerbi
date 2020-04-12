@@ -36,7 +36,7 @@ func TestAccPBIX_basic(t *testing.T) {
 				}
 
 				resource "powerbi_pbix" "test" {
-					workspace = "${powerbi_workspace.test.id}"
+					workspace_id = "${powerbi_workspace.test.id}"
 					name = "Acceptance Test PBIX"
 					source = "%s"
 					source_hash = "${filemd5("%s")}"
@@ -63,7 +63,7 @@ func TestAccPBIX_basic(t *testing.T) {
 				}
 
 				resource "powerbi_pbix" "test" {
-					workspace = "${powerbi_workspace.test.id}"
+					workspace_id = "${powerbi_workspace.test.id}"
 					name = "Acceptance Test PBIX"
 					source = "%s"
 					source_hash = "${filemd5("%s")}"
@@ -112,7 +112,7 @@ func TestAccPBIX_parameters(t *testing.T) {
 				}
 
 				resource "powerbi_pbix" "test" {
-					workspace = "${powerbi_workspace.test.id}"
+					workspace_id = "${powerbi_workspace.test.id}"
 					name = "Acceptance Test PBIX"
 					source = "./resource_pbix_test_sample1.pbix"
 					source_hash = "${filemd5("./resource_pbix_test_sample1.pbix")}"
@@ -152,7 +152,7 @@ func TestAccPBIX_parameters(t *testing.T) {
 				}
 
 				resource "powerbi_pbix" "test" {
-					workspace = "${powerbi_workspace.test.id}"
+					workspace_id = "${powerbi_workspace.test.id}"
 					name = "Acceptance Test PBIX"
 					source = "./resource_pbix_test_sample1.pbix"
 					source_hash = "${filemd5("./resource_pbix_test_sample1.pbix")}"
@@ -176,7 +176,7 @@ func TestAccPBIX_parameters(t *testing.T) {
 				}
 
 				resource "powerbi_pbix" "test" {
-					workspace = "${powerbi_workspace.test.id}"
+					workspace_id = "${powerbi_workspace.test.id}"
 					name = "Acceptance Test PBIX"
 					source = "./resource_pbix_test_sample2.pbix"
 					source_hash = "${filemd5("./resource_pbix_test_sample1.pbix")}"
@@ -212,7 +212,7 @@ func TestAccPBIX_datasources(t *testing.T) {
 				}
 
 				resource "powerbi_pbix" "test" {
-					workspace = "${powerbi_workspace.test.id}"
+					workspace_id = "${powerbi_workspace.test.id}"
 					name = "Acceptance Test PBIX"
 					source = "./resource_pbix_test_sample1.pbix"
 					source_hash = "${filemd5("./resource_pbix_test_sample1.pbix")}"
@@ -256,7 +256,7 @@ func TestAccPBIX_datasources(t *testing.T) {
 				}
 
 				resource "powerbi_pbix" "test" {
-					workspace = "${powerbi_workspace.test.id}"
+					workspace_id = "${powerbi_workspace.test.id}"
 					name = "Acceptance Test PBIX"
 					source = "./resource_pbix_test_sample1.pbix"
 					source_hash = "${filemd5("./resource_pbix_test_sample1.pbix")}"

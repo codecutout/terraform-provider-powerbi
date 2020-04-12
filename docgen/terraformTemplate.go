@@ -5,8 +5,19 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 )
+
+type property struct {
+	Name   string
+	Schema *schema.Schema
+}
+
+type nestedObjectProperty struct {
+	Name         string
+	NestedSchema map[string]*schema.Schema
+}
 
 // PopulateTerraformDocs update template fields inline in files in the folderpath
 func PopulateTerraformDocs(folderpath string, providerName string, provider *schema.Provider) error {
@@ -77,31 +88,60 @@ func writePropertyDocumentation(writer *strings.Builder, propertySchemas map[str
 		}
 	}
 
-	nestedObjects := make(map[string]map[string]*schema.Schema)
+	sortedProperties := sortProperties(filteredPropertySchames)
 
-	for filteredProperty, filteredPropertySchema := range filteredPropertySchames {
+	nestedObjects := make([]nestedObjectProperty, 0)
+
+	for _, prop := range sortedProperties {
 
 		descriptionSuffix := ""
-		res, isNestedResource := filteredPropertySchema.Elem.(*schema.Resource)
+		res, isNestedResource := prop.Schema.Elem.(*schema.Resource)
 		if isNestedResource {
-			nestedObjects[filteredProperty] = res.Schema
-			descriptionSuffix = capitilizeFirstCharacter(indefiniteArticle(filteredProperty)) + " `" + filteredProperty + "` block is defined below."
+			nestedObjects = append(nestedObjects, nestedObjectProperty{Name: prop.Name, NestedSchema: res.Schema})
+			descriptionSuffix = capitilizeFirstCharacter(indefiniteArticle(prop.Name)) + " [`" + prop.Name + "`](#prop-" + prop.Name + ") block is defined below."
 		}
 
-		tagString := buildTagString(filteredPropertySchema)
+		tagString := buildTagString(prop.Schema)
 		if tagString != "" {
 			tagString = tagString + " "
 		}
 
-		writeLine(writer, "* `", filteredProperty, "` - ", tagString, joinSentances(filteredPropertySchema.Description, descriptionSuffix))
+		writeLine(writer, "* `", prop.Name, "` - ", tagString, joinSentances(prop.Schema.Description, descriptionSuffix))
 
 	}
 
-	for argumentName, nestedObject := range nestedObjects {
+	for _, nestedProp := range nestedObjects {
 		writeLine(writer, "---")
-		writeLine(writer, capitilizeFirstCharacter(indefiniteArticle(argumentName)), " `", argumentName, "` block supports the following:")
-		writePropertyDocumentation(writer, nestedObject, filter)
+		writeLine(writer,
+			"<a id=\"prop-", nestedProp.Name, "\"></a>",
+			capitilizeFirstCharacter(indefiniteArticle(nestedProp.Name)),
+			" `", nestedProp.Name, "` block supports the following:")
+		writePropertyDocumentation(writer, nestedProp.NestedSchema, filter)
 	}
+}
+
+func sortProperties(propertySchemas map[string]*schema.Schema) []property {
+	propertyList := make([]property, 0, len(propertySchemas))
+	for name, schema := range propertySchemas {
+		propertyList = append(propertyList, property{Name: name, Schema: schema})
+	}
+
+	// Property names are sorted last
+	sort.SliceStable(propertyList, func(i, j int) bool {
+		return propertyList[i].Name < propertyList[j].Name
+	})
+
+	// ForceNew fields are sorted second
+	sort.SliceStable(propertyList, func(i, j int) bool {
+		return propertyList[i].Schema.ForceNew && !propertyList[j].Schema.ForceNew
+	})
+
+	// Required fields are sorted first
+	sort.SliceStable(propertyList, func(i, j int) bool {
+		return propertyList[i].Schema.Required && !propertyList[j].Schema.Required
+	})
+
+	return propertyList
 }
 
 func buildTagString(attribute *schema.Schema) string {

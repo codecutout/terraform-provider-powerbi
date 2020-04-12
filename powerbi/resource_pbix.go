@@ -20,7 +20,7 @@ func ResourcePBIX() *schema.Resource {
 		},
 
 		Schema: map[string]*schema.Schema{
-			"workspace": {
+			"workspace_id": {
 				Type:        schema.TypeString,
 				Description: "Workspace ID in which the PBIX will be added.",
 				Required:    true,
@@ -249,7 +249,7 @@ func createImport(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	resp, err := client.PostImportInGroup(
-		d.Get("workspace").(string),
+		d.Get("workspace_id").(string),
 		d.Get("name").(string),
 		"CreateOrOverwrite",
 		reader,
@@ -259,7 +259,7 @@ func createImport(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	d.SetId(resp.ID)
-	d.SetPartial("workspace")
+	d.SetPartial("workspace_id")
 	d.SetPartial("source")
 	d.SetPartial("source_hash")
 
