@@ -1,8 +1,8 @@
-
-
 # Terraform Provider for Power BI
 
 [![Build status](https://ci.appveyor.com/api/projects/status/lcrfr9no2b7ufu87/branch/master?svg=true)](https://ci.appveyor.com/project/codecutout/terraform-provider-powerbi/branch/master)
+
+A Terraform provider that allows the creation and updating of Power BI resources
 
 The Power BI Provider supports Terraform 0.12.x. It may still function on earlier versions but has only been tested on 0.12.x
 
@@ -13,11 +13,11 @@ The Power BI Provider supports Terraform 0.12.x. It may still function on earlie
 ```
 # Configure the Power BI Provider
 provider "powerbi" {
-  # tenant_id       = "..."
-  # client_id       = "..."
-  # client_secret   = "..."
-  # username        = "..."
-  # password        = "..."
+  tenant_id       = "..."
+  client_id       = "..."
+  client_secret   = "..."
+  username        = "..."
+  password        = "..."
 }
 
 # Create a workspace
@@ -66,13 +66,13 @@ If you wish to work on the provider, you'll first need [Go](http://www.golang.or
 
 ### Build
 ```sh
-$ go build main.go
+$ go build
 ```
 
 ### Documentation generation
 Documentation markdown files are partly generated from terraform schema definitions. To regenreate the documentation from updated schema run
 ``` sh
-$ go run docgen.go
+$ go run docgen/cmd
 ```
 
 ### Testing
