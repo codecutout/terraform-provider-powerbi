@@ -32,7 +32,7 @@ build_script:
     
     Write-Host "Building '$outputPath'"
     go build -o $outputPath
-      
+    
     Write-Host "Zip folder 'bin/$dir' to 'bin/$dir.zip'"
     Compress-Archive -Path "bin/$dir" -DestinationPath "bin/$dir.zip"
     
