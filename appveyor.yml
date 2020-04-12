@@ -12,31 +12,40 @@ environment:
   POWERBI_PASSWORD:
     secure: 5z0At8R96g/HOEEvlJVjcw==
   matrix:
-  - GOOS: windows
+  - APPVEYOR_BUILD_WORKER_IMAGE: Ubuntu
+    GOOS: linux
     GOARCH: amd64
-  - GOOS: linux
+  - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
+    GOOS: windows
     GOARCH: amd64
 build_script:
 - pwsh: >-
-    if ($env:APPVEYOR_REPO_TAG -eq "true") {
-        Write-Host "Building release from tag '$env:APPVEYOR_REPO_TAG_NAME'"
-        Update-AppveyorBuild -Version "$env:APPVEYOR_REPO_TAG_NAME"
-        $env:APPVEYOR_BUILD_VERSION = $env:APPVEYOR_REPO_TAG_NAME
-    }
-
-
-    go build -o bin/$($env:GOOS)_$($env:GOARCH)/terraform-provider-powerbi_$env:APPVEYOR_BUILD_VERSION main.go
+  if ($env:APPVEYOR_REPO_TAG -eq "true") {
+    Write-Host "Building release from tag '$env:APPVEYOR_REPO_TAG_NAME'"
+    Update-AppveyorBuild -Version "$env:APPVEYOR_REPO_TAG_NAME"
+    $env:APPVEYOR_BUILD_VERSION = $env:APPVEYOR_REPO_TAG_NAME
+  }
+  
+  $dir = "$($env:GOOS)_$($env:GOARCH)"
+  $outputPath = "bin/$dir/terraform-provider-powerbi_$($env:APPVEYOR_BUILD_VERSION)"
+  if ($($env:GOOS) -eq "windows") { $outputPath += ".exe" }
+	
+  Write-Host "Building '$outputPath'"
+  go build -o $outputPath
+    
+  Write-Host "Zip folder 'bin/$dir' to 'bin/$dir.zip'"
+  Compress-Archive -Path "bin/$dir" -DestinationPath "bin/$dir.zip"
+  
+  $artifactFilename = "$($dir)_terraform-provider-powerbi_$($env:APPVEYOR_BUILD_VERSION).zip"
+  Push-AppveyorArtifact bin/$dir.zip -FileName $artifactFilename -DeploymentName terraform-provider-powerbi"
 test_script:
 - cmd: go test -v ./...
-artifacts:
-- path: bin
-  name: $(GOOS)_$(GOARCH).terraform-provider-powerbi_$(APPVEYOR_BUILD_VERSION)
 deploy:
 - provider: GitHub
   tag: $(APPVEYOR_REPO_TAG_NAME)
   auth_token:
     secure: VpsAsWfet05ak8vyY7x1N9QcXXidnkXCiUvRn+xdZKLK89wWIDj3Yg5bzF/47dDb
-  artifact: $(GOOS)_$(GOARCH).terraform-provider-powerbi_$(APPVEYOR_BUILD_VERSION)
+  artifact: terraform-provider-powerbi
   draft: false
   prerelease: true
   force_update: true
