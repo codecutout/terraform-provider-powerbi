@@ -20,24 +20,24 @@ environment:
     GOARCH: amd64
 build_script:
 - pwsh: >-
-  if ($env:APPVEYOR_REPO_TAG -eq "true") {
-    Write-Host "Building release from tag '$($env:APPVEYOR_REPO_TAG_NAME)'"
-    Update-AppveyorBuild -Version $env:APPVEYOR_REPO_TAG_NAME
-    $env:APPVEYOR_BUILD_VERSION = $env:APPVEYOR_REPO_TAG_NAME
-  }
-  
-  $dir = "$($env:GOOS)_$($env:GOARCH)"
-  $outputPath = "bin/$dir/terraform-provider-powerbi_$($env:APPVEYOR_BUILD_VERSION)"
-  if ($($env:GOOS) -eq "windows") { $outputPath += ".exe" }
-	
-  Write-Host "Building '$outputPath'"
-  go build -o $outputPath
+    if ($env:APPVEYOR_REPO_TAG -eq "true") {
+      Write-Host "Building release from tag '$($env:APPVEYOR_REPO_TAG_NAME)'"
+      Update-AppveyorBuild -Version $env:APPVEYOR_REPO_TAG_NAME
+      $env:APPVEYOR_BUILD_VERSION = $env:APPVEYOR_REPO_TAG_NAME
+    }
     
-  Write-Host "Zip folder 'bin/$dir' to 'bin/$dir.zip'"
-  Compress-Archive -Path "bin/$dir" -DestinationPath "bin/$dir.zip"
-  
-  $artifactFilename = "$($dir)_terraform-provider-powerbi_$($env:APPVEYOR_BUILD_VERSION).zip"
-  Push-AppveyorArtifact bin/$dir.zip -FileName $artifactFilename -DeploymentName 'terraform-provider-powerbi'
+    $dir = "$($env:GOOS)_$($env:GOARCH)"
+    $outputPath = "bin/$dir/terraform-provider-powerbi_$($env:APPVEYOR_BUILD_VERSION)"
+    if ($($env:GOOS) -eq "windows") { $outputPath += ".exe" }
+    
+    Write-Host "Building '$outputPath'"
+    go build -o $outputPath
+      
+    Write-Host "Zip folder 'bin/$dir' to 'bin/$dir.zip'"
+    Compress-Archive -Path "bin/$dir" -DestinationPath "bin/$dir.zip"
+    
+    $artifactFilename = "$($dir)_terraform-provider-powerbi_$($env:APPVEYOR_BUILD_VERSION).zip"
+    Push-AppveyorArtifact bin/$dir.zip -FileName $artifactFilename -DeploymentName 'terraform-provider-powerbi'
 test_script:
 - cmd: go test -v ./...
 deploy:
