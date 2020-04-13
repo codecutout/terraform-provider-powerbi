@@ -50,6 +50,53 @@ func TestAccWorkspace_basic(t *testing.T) {
 	})
 }
 
+func TestAccWorkspace_skew(t *testing.T) {
+	var workspaceID string
+	config := `
+	resource "powerbi_workspace" "test" {
+		name = "Acceptance Test Workspace"
+	}
+	`
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckPowerbiWorkspaceDestroy,
+		Steps: []resource.TestStep{
+			// first step creates the resource
+			{
+				Config: config,
+				Check: resource.ComposeTestCheckFunc(
+					set("powerbi_workspace.test", "id", &workspaceID),
+				),
+			},
+			// second step skew new title
+			{
+				PreConfig: func() {
+					client := testAccProvider.Meta().(*api.Client)
+					client.UpdateGroupAsAdmin(workspaceID, api.UpdateGroupAsAdminRequest{
+						Name: "Acceptance Test Workspace - Skewed",
+					})
+				},
+				Config: config,
+				Check: resource.ComposeTestCheckFunc(
+					testCheckWorkspaceExistsWithName("powerbi_workspace.test", "Acceptance Test Workspace"),
+				),
+			},
+			// third step skew by deleting group
+			{
+				PreConfig: func() {
+					client := testAccProvider.Meta().(*api.Client)
+					client.DeleteGroup(workspaceID)
+				},
+				Config: config,
+				Check: resource.ComposeTestCheckFunc(
+					testCheckWorkspaceExistsWithName("powerbi_workspace.test", "Acceptance Test Workspace"),
+				),
+			},
+		},
+	})
+}
+
 func testCheckWorkspaceExistsWithName(rn string, expectedName string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[rn]

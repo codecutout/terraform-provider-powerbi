@@ -162,6 +162,10 @@ func createPBIX(d *schema.ResourceData, meta interface{}) error {
 func readPBIX(d *schema.ResourceData, meta interface{}) error {
 
 	err := readImport(d, meta, d.Timeout(schema.TimeoutRead))
+	if isHTTP404Error(err) {
+		d.SetId("")
+		return nil
+	}
 	if err != nil {
 		return err
 	}
@@ -426,11 +430,4 @@ func readPBIXDatasources(d *schema.ResourceData, meta interface{}) error {
 	d.SetPartial("datasource")
 	d.Set("datasource", stateDatasources)
 	return nil
-}
-
-func emptyStringToNil(input string) *string {
-	if input == "" {
-		return nil
-	}
-	return &input
 }

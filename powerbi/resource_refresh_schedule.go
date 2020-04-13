@@ -1,8 +1,10 @@
 package powerbi
 
 import (
+	"fmt"
 	"github.com/codecutout/terraform-provider-powerbi/powerbi/internal/api"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"regexp"
 )
 
 // ResourceRefreshSchedule represents a Power BI refresh schedule
@@ -36,7 +38,7 @@ func ResourceRefreshSchedule() *schema.Resource {
 				Elem: &schema.Schema{
 					Type: schema.TypeString,
 				},
-				Description: "The list of times on the day the schedule should refresh. Should only be in half hour increments.",
+				Description: "The list of times on the day the schedule should refresh. Times should be in the format HH:00 or HH:30 i.e. Hour should be two digits and minutes must either be on the full or half hour.",
 				Required:    true,
 			},
 			"enabled": {
@@ -56,45 +58,82 @@ func ResourceRefreshSchedule() *schema.Resource {
 				Description: "The notification option when a scheduled refresh fails. Should be either `MailOnFailure` or `NoNotification`",
 				Optional:    true,
 				Default:     "NoNotification",
+				ValidateFunc: func(val interface{}, key string) (warns []string, errs []error) {
+					stringVal := val.(string)
+					reg := regexp.MustCompile("^(MailOnFailure|NoNotification)$")
+					if !reg.MatchString(stringVal) {
+						errs = append(errs, fmt.Errorf("Expected argument 'notify_option' to be either 'MailOnFailure' or 'NoNotification'. Found '%v'", stringVal))
+					}
+					return warns, errs
+				},
 			},
 		},
 	}
 }
 
-func convertStringToPointer(s string) *string {
-	return &s
-}
-
-func convertBoolToPointer(b bool) *bool {
-	return &b
-}
-
-func convertStringSliceToPointer(ss []string) *[]string {
-	return &ss
-}
-
-func convertToStringSlice(interfaceSlice []interface{}) []string {
-	stringSlice := make([]string, len(interfaceSlice))
-	for i := range interfaceSlice {
-		stringSlice[i] = interfaceSlice[i].(string)
+func getDatasetID(d *schema.ResourceData, meta interface{}) (string, error) {
+	datasetID := d.Get("dataset_id").(string)
+	if datasetID == "" {
+		datasetID = d.Id()
 	}
-	return stringSlice
+	if datasetID == "" {
+		return "", fmt.Errorf("Unable to determine dataset ID. Ensure dataset_id is set")
+	}
+	return datasetID, nil
 }
 
-func nilIfFalse(b bool) *bool {
-	if !b {
-		return nil
-	}
-	return &b
+func validateConfig(d *schema.ResourceData, meta interface{}) error {
+	// schema validate functions do not yet support lists and maps
+	// creating own makeshift validation to check days and times
 
+	err := validateConfigDays(d, meta)
+	if err != nil {
+		return err
+	}
+	err = validateConfigTimes(d, meta)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func validateConfigDays(d *schema.ResourceData, meta interface{}) error {
+	reg := regexp.MustCompile("^(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)$")
+	days := convertToStringSlice(d.Get("days").([]interface{}))
+	for _, day := range days {
+		if !reg.MatchString(day) {
+			return fmt.Errorf("config is invalid: Expected argument 'days' to be either 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday' or 'Sunday'. Found '%v'", day)
+		}
+	}
+	return nil
+}
+
+func validateConfigTimes(d *schema.ResourceData, meta interface{}) error {
+	reg := regexp.MustCompile("^(0[0-9]|1[0-9]|2[0-3]):(00|30)$")
+	times := convertToStringSlice(d.Get("times").([]interface{}))
+	for _, time := range times {
+		if !reg.MatchString(time) {
+			return fmt.Errorf("config is invalid: Expected argument 'times' to be in the format 'HH:00' or 'HH:30'. Hours must be two digits and must be on the hour or half hour. Found time '%v'", time)
+		}
+	}
+	return nil
 }
 
 func createRefreshSchedule(d *schema.ResourceData, meta interface{}) error {
+	err := validateConfig(d, meta)
+	if err != nil {
+		return err
+	}
+
 	client := meta.(*api.Client)
 
 	enabled := nilIfFalse(d.Get("enabled").(bool))
-	datasetID := d.Get("dataset_id").(string)
-	err := client.UpdateRefreshSchedule(datasetID, api.UpdateRefreshScheduleRequest{
+	datasetID, err := getDatasetID(d, meta)
+	if err != nil {
+		return err
+	}
+
+	err = client.UpdateRefreshSchedule(datasetID, api.UpdateRefreshScheduleRequest{
 		Value: api.UpdateRefreshScheduleRequestValue{
 			Enabled:         enabled,
 			Days:            convertStringSliceToPointer(convertToStringSlice(d.Get("days").([]interface{}))),
@@ -125,13 +164,21 @@ func createRefreshSchedule(d *schema.ResourceData, meta interface{}) error {
 func readRefreshSchedule(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*api.Client)
 
-	datasetID := d.Get("dataset_id").(string)
+	datasetID, err := getDatasetID(d, meta)
+	if err != nil {
+		return err
+	}
 	refreshSchedule, err := client.GetRefreshSchedule(datasetID)
+	if isHTTP404Error(err) {
+		d.SetId("")
+		return nil
+	}
 	if err != nil {
 		return err
 	}
 
 	d.SetId(datasetID)
+	d.Set("dataset_id", datasetID)
 	d.Set("enabled", refreshSchedule.Enabled)
 	d.Set("days", refreshSchedule.Days)
 	d.Set("times", refreshSchedule.Times)
@@ -142,6 +189,11 @@ func readRefreshSchedule(d *schema.ResourceData, meta interface{}) error {
 }
 
 func updateRefreshSchedule(d *schema.ResourceData, meta interface{}) error {
+	err := validateConfig(d, meta)
+	if err != nil {
+		return err
+	}
+
 	client := meta.(*api.Client)
 
 	requestVal := api.UpdateRefreshScheduleRequestValue{}
@@ -174,7 +226,10 @@ func updateRefreshSchedule(d *schema.ResourceData, meta interface{}) error {
 		updateRequired = true
 	}
 
-	datasetID := d.Get("dataset_id").(string)
+	datasetID, err := getDatasetID(d, meta)
+	if err != nil {
+		return err
+	}
 	if updateRequired {
 		err := client.UpdateRefreshSchedule(datasetID, api.UpdateRefreshScheduleRequest{
 			Value: requestVal,
@@ -201,20 +256,13 @@ func deleteRefreshSchedule(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*api.Client)
 
 	// You dont delete refresh schedules, so we will disable it
-	datasetID := d.Get("dataset_id").(string)
-	err := client.UpdateRefreshSchedule(datasetID, api.UpdateRefreshScheduleRequest{
+	datasetID, err := getDatasetID(d, meta)
+	if err != nil {
+		return err
+	}
+	return client.UpdateRefreshSchedule(datasetID, api.UpdateRefreshScheduleRequest{
 		Value: api.UpdateRefreshScheduleRequestValue{
 			Enabled: convertBoolToPointer(false),
 		},
 	})
-
-	if err != nil {
-		// we do not care about 404. Indictes the resource is already deleted
-		httpErr, isHTTPErr := err.(api.HTTPUnsuccessfulError)
-		if isHTTPErr && httpErr.Response.StatusCode == 404 {
-			return nil
-		}
-	}
-
-	return err
 }
