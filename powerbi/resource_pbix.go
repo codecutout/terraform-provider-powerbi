@@ -75,7 +75,7 @@ func ResourcePBIX() *schema.Resource {
 			},
 			"datasource": {
 				Type:        schema.TypeSet,
-				Description: "datasources to be reconfigured after deploying the PBIX dataset. Changing this value will require reuploading the PBIX. Any datasource updated will not be tracked",
+				Description: "Datasources to be reconfigured after deploying the PBIX dataset. Changing this value will require reuploading the PBIX. Any datasource updated will not be tracked",
 				Optional:    true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
