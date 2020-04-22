@@ -61,9 +61,8 @@ func readWorkspace(d *schema.ResourceData, meta interface{}) error {
 func updateWorkspace(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*api.Client)
 
-	err := client.UpdateGroupAsAdmin(api.UpdateGroupAsAdminRequest{
-		GroupID: d.Id(),
-		Name:    d.Get("name").(string),
+	err := client.UpdateGroupAsAdmin(d.Id(), api.UpdateGroupAsAdminRequest{
+		Name: d.Get("name").(string),
 	})
 	if err != nil {
 		return err

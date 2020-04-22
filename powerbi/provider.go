@@ -44,8 +44,9 @@ func Provider() *schema.Provider {
 		},
 
 		ResourcesMap: map[string]*schema.Resource{
-			"powerbi_workspace": ResourceWorkspace(),
-			"powerbi_pbix":      ResourcePBIX(),
+			"powerbi_workspace":        ResourceWorkspace(),
+			"powerbi_pbix":             ResourcePBIX(),
+			"powerbi_refresh_schedule": ResourceRefreshSchedule(),
 		},
 
 		ConfigureFunc: providerConfigure,

@@ -75,7 +75,7 @@ func ResourcePBIX() *schema.Resource {
 			},
 			"datasource": {
 				Type:        schema.TypeSet,
-				Description: "datasources to be reconfigured after deploying the PBIX dataset. Changing this value will require reuploading the PBIX. Any datasource updated will not be tracked",
+				Description: "Datasources to be reconfigured after deploying the PBIX dataset. Changing this value will require reuploading the PBIX. Any datasource updated will not be tracked",
 				Optional:    true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
@@ -162,6 +162,10 @@ func createPBIX(d *schema.ResourceData, meta interface{}) error {
 func readPBIX(d *schema.ResourceData, meta interface{}) error {
 
 	err := readImport(d, meta, d.Timeout(schema.TimeoutRead))
+	if isHTTP404Error(err) {
+		d.SetId("")
+		return nil
+	}
 	if err != nil {
 		return err
 	}
@@ -426,11 +430,4 @@ func readPBIXDatasources(d *schema.ResourceData, meta interface{}) error {
 	d.SetPartial("datasource")
 	d.Set("datasource", stateDatasources)
 	return nil
-}
-
-func emptyStringToNil(input string) *string {
-	if input == "" {
-		return nil
-	}
-	return &input
 }
