@@ -39,7 +39,7 @@ build_script:
     $artifactFilename = "$($dir)_terraform-provider-powerbi_$($env:APPVEYOR_BUILD_VERSION).zip"
     Push-AppveyorArtifact bin/$dir.zip -FileName $artifactFilename -DeploymentName 'terraform-provider-powerbi'
 test_script:
-- cmd: go test -v ./...
+- pwsh: go test -v ./...
 deploy:
 - provider: GitHub
   tag: $(APPVEYOR_REPO_TAG_NAME)
