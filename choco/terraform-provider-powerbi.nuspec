@@ -1,0 +1,18 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2015/06/nuspec.xsd">
+  <metadata>
+    <id>terraform-provider-powerbi</id>
+    <version>0.0.0-dev</version>
+    <title>terraform-provider-powerbi</title>
+    <authors>Codecutout</authors>
+    <projectUrl>https://github.com/codecutout/terraform-provider-powerbi</projectUrl>
+    <licenseUrl>https://raw.githubusercontent.com/codecutout/terraform-provider-powerbi/master/LICENSE</licenseUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <tags>terraform-provider-powerbi terraform powerbi</tags>
+    <description>A terraform provider that allows creation of Power BI resources</description>
+  </metadata>
+  <files>
+    <file src="tools\**" target="tools" />
+    <file src="$pluginZip$" target="tools/terraform-plugins.zip" />
+  </files>
+</package>
