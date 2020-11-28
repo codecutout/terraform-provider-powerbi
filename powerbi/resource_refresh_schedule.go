@@ -2,9 +2,10 @@ package powerbi
 
 import (
 	"fmt"
+	"regexp"
+
 	"github.com/codecutout/terraform-provider-powerbi/powerbi/internal/api"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
-	"regexp"
 )
 
 // ResourceRefreshSchedule represents a Power BI refresh schedule
@@ -135,7 +136,7 @@ func createRefreshSchedule(d *schema.ResourceData, meta interface{}) error {
 
 	err = client.UpdateRefreshSchedule(datasetID, api.UpdateRefreshScheduleRequest{
 		Value: api.UpdateRefreshScheduleRequestValue{
-			Enabled:         enabled,
+			Enabled:         convertBoolToPointer(true), // API doesnt allow updating if disabled
 			Days:            convertStringSliceToPointer(convertToStringSlice(d.Get("days").([]interface{}))),
 			Times:           convertStringSliceToPointer(convertToStringSlice(d.Get("times").([]interface{}))),
 			LocalTimeZoneID: convertStringToPointer(d.Get("local_time_zone_id").(string)),
@@ -146,7 +147,7 @@ func createRefreshSchedule(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
-	// API does not allow disabling while changing other properties
+	// Set the disabled flag to be the correct value
 	if enabled == nil {
 		err := client.UpdateRefreshSchedule(datasetID, api.UpdateRefreshScheduleRequest{
 			Value: api.UpdateRefreshScheduleRequestValue{
