@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"regexp"
 
-	"github.com/codecutout/terraform-provider-powerbi/powerbi/internal/api"
+	"github.com/codecutout/terraform-provider-powerbi/internal/powerbiapi"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 )
 
@@ -126,7 +126,7 @@ func createRefreshSchedule(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
-	client := meta.(*api.Client)
+	client := meta.(*powerbiapi.Client)
 
 	enabled := nilIfFalse(d.Get("enabled").(bool))
 	datasetID, err := getDatasetID(d, meta)
@@ -134,8 +134,8 @@ func createRefreshSchedule(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
-	err = client.UpdateRefreshSchedule(datasetID, api.UpdateRefreshScheduleRequest{
-		Value: api.UpdateRefreshScheduleRequestValue{
+	err = client.UpdateRefreshSchedule(datasetID, powerbiapi.UpdateRefreshScheduleRequest{
+		Value: powerbiapi.UpdateRefreshScheduleRequestValue{
 			Enabled:         convertBoolToPointer(true), // API doesnt allow updating if disabled
 			Days:            convertStringSliceToPointer(convertToStringSlice(d.Get("days").([]interface{}))),
 			Times:           convertStringSliceToPointer(convertToStringSlice(d.Get("times").([]interface{}))),
@@ -149,8 +149,8 @@ func createRefreshSchedule(d *schema.ResourceData, meta interface{}) error {
 
 	// Set the disabled flag to be the correct value
 	if enabled == nil {
-		err := client.UpdateRefreshSchedule(datasetID, api.UpdateRefreshScheduleRequest{
-			Value: api.UpdateRefreshScheduleRequestValue{
+		err := client.UpdateRefreshSchedule(datasetID, powerbiapi.UpdateRefreshScheduleRequest{
+			Value: powerbiapi.UpdateRefreshScheduleRequestValue{
 				Enabled: convertBoolToPointer(false),
 			},
 		})
@@ -163,7 +163,7 @@ func createRefreshSchedule(d *schema.ResourceData, meta interface{}) error {
 }
 
 func readRefreshSchedule(d *schema.ResourceData, meta interface{}) error {
-	client := meta.(*api.Client)
+	client := meta.(*powerbiapi.Client)
 
 	datasetID, err := getDatasetID(d, meta)
 	if err != nil {
@@ -195,9 +195,9 @@ func updateRefreshSchedule(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
-	client := meta.(*api.Client)
+	client := meta.(*powerbiapi.Client)
 
-	requestVal := api.UpdateRefreshScheduleRequestValue{}
+	requestVal := powerbiapi.UpdateRefreshScheduleRequestValue{}
 	updateRequired := false
 	disableRequired := false
 
@@ -232,7 +232,7 @@ func updateRefreshSchedule(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 	if updateRequired {
-		err := client.UpdateRefreshSchedule(datasetID, api.UpdateRefreshScheduleRequest{
+		err := client.UpdateRefreshSchedule(datasetID, powerbiapi.UpdateRefreshScheduleRequest{
 			Value: requestVal,
 		})
 		if err != nil {
@@ -242,8 +242,8 @@ func updateRefreshSchedule(d *schema.ResourceData, meta interface{}) error {
 
 	// disabling has to be in a seperate step as api does not allow updates and disable in same request
 	if disableRequired {
-		err := client.UpdateRefreshSchedule(datasetID, api.UpdateRefreshScheduleRequest{
-			Value: api.UpdateRefreshScheduleRequestValue{Enabled: convertBoolToPointer(false)},
+		err := client.UpdateRefreshSchedule(datasetID, powerbiapi.UpdateRefreshScheduleRequest{
+			Value: powerbiapi.UpdateRefreshScheduleRequestValue{Enabled: convertBoolToPointer(false)},
 		})
 		if err != nil {
 			return err
@@ -254,15 +254,15 @@ func updateRefreshSchedule(d *schema.ResourceData, meta interface{}) error {
 }
 
 func deleteRefreshSchedule(d *schema.ResourceData, meta interface{}) error {
-	client := meta.(*api.Client)
+	client := meta.(*powerbiapi.Client)
 
 	// You dont delete refresh schedules, so we will disable it
 	datasetID, err := getDatasetID(d, meta)
 	if err != nil {
 		return err
 	}
-	return client.UpdateRefreshSchedule(datasetID, api.UpdateRefreshScheduleRequest{
-		Value: api.UpdateRefreshScheduleRequestValue{
+	return client.UpdateRefreshSchedule(datasetID, powerbiapi.UpdateRefreshScheduleRequest{
+		Value: powerbiapi.UpdateRefreshScheduleRequestValue{
 			Enabled: convertBoolToPointer(false),
 		},
 	})

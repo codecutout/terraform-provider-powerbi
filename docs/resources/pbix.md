@@ -1,13 +1,15 @@
-# powerbi_pbix
-powerbi_pbix represents a PBIX upload in Power BI. 
+# PBIX Resource
+`powerbi_pbix` represents a PBIX upload in Power BI. 
 
-Internally a PBIX upload generates an 
+Although from the user perspective this is a single resource, internally a PBIX upload generates the following
 * Import object - identifeid with `id`
 * Dataset object - identified with `dataset_id`
 * Report object - identified with `report_id`
 
 ## Example Usage
-``` terraform
+
+### Datasource
+```hcl
 resource "powerbi_pbix" "mypbix" {
 	workspace_id = "470b0d57-1f23-4332-a16f-9235bd174318"
 	name = "My PBIX"
@@ -21,24 +23,9 @@ resource "powerbi_pbix" "mypbix" {
 }
 ```
 
-## Example Usage with Datasource
-``` terraform
-resource "powerbi_pbix" "mypbix" {
-	workspace_id = "470b0d57-1f23-4332-a16f-9235bd174318"
-	name = "My PBIX"
-	source = "./my-pbix.pbix"
-	source_hash = "${filemd5(".my-pbix.pbix")}"
-	datasource {
-		type = "OData"
-		url = "https://services.odata.org/V3/(S(kbiqo1qkby04vnobw0li0fcp))/OData/OData.svc"
-		original_url = "https://services.odata.org/V3/OData/OData.svc"
-	}
-}
-```
 
-
-## Example Usage with Parameters
-``` terraform
+### Parameters
+```hcl
 resource "powerbi_pbix" "mypbix" {
 	workspace_id = "470b0d57-1f23-4332-a16f-9235bd174318"
 	name = "My PBIX"

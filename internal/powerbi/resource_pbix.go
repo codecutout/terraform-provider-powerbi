@@ -1,11 +1,12 @@
 package powerbi
 
 import (
-	"github.com/codecutout/terraform-provider-powerbi/powerbi/internal/api"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	"io"
 	"os"
 	"time"
+
+	"github.com/codecutout/terraform-provider-powerbi/internal/powerbiapi"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 )
 
 // ResourcePBIX represents a Power BI PBIX file
@@ -225,7 +226,7 @@ func updatePBIX(d *schema.ResourceData, meta interface{}) error {
 }
 
 func deletePBIX(d *schema.ResourceData, meta interface{}) error {
-	client := meta.(*api.Client)
+	client := meta.(*powerbiapi.Client)
 
 	if reportID := d.Get("report_id"); reportID != nil {
 		err := client.DeleteReport(reportID.(string))
@@ -245,7 +246,7 @@ func deletePBIX(d *schema.ResourceData, meta interface{}) error {
 }
 
 func createImport(d *schema.ResourceData, meta interface{}) error {
-	client := meta.(*api.Client)
+	client := meta.(*powerbiapi.Client)
 
 	reader, err := openContentReader(d)
 	if err != nil {
@@ -271,7 +272,7 @@ func createImport(d *schema.ResourceData, meta interface{}) error {
 }
 
 func readImport(d *schema.ResourceData, meta interface{}, timeoutForSuccessfulImport time.Duration) error {
-	client := meta.(*api.Client)
+	client := meta.(*powerbiapi.Client)
 	id := d.Id()
 
 	im, err := client.WaitForImportToSucceed(id, timeoutForSuccessfulImport)
@@ -297,16 +298,16 @@ func readImport(d *schema.ResourceData, meta interface{}, timeoutForSuccessfulIm
 
 func setPBIXParameters(d *schema.ResourceData, meta interface{}) error {
 
-	client := meta.(*api.Client)
+	client := meta.(*powerbiapi.Client)
 	parameter := d.Get("parameter").(*schema.Set)
 	datasetID := d.Get("dataset_id").(string)
 	if parameter != nil {
 		parameterList := parameter.List()
 		if len(parameterList) > 0 {
-			updateParameterRequest := api.UpdateParametersRequest{}
+			updateParameterRequest := powerbiapi.UpdateParametersRequest{}
 			for _, parameterObj := range parameterList {
 				parameterObj := parameterObj.(map[string]interface{})
-				updateParameterRequest.UpdateDetails = append(updateParameterRequest.UpdateDetails, api.UpdateParametersRequestItem{
+				updateParameterRequest.UpdateDetails = append(updateParameterRequest.UpdateDetails, powerbiapi.UpdateParametersRequestItem{
 					Name:     parameterObj["name"].(string),
 					NewValue: parameterObj["value"].(string),
 				})
@@ -325,7 +326,7 @@ func setPBIXParameters(d *schema.ResourceData, meta interface{}) error {
 
 func readPBIXParameters(d *schema.ResourceData, meta interface{}) error {
 
-	client := meta.(*api.Client)
+	client := meta.(*powerbiapi.Client)
 
 	datasetID := d.Get("dataset_id").(string)
 	stateParameters := d.Get("parameter").(*schema.Set)
@@ -351,25 +352,25 @@ func readPBIXParameters(d *schema.ResourceData, meta interface{}) error {
 
 func setPBIXDatasources(d *schema.ResourceData, meta interface{}) error {
 
-	client := meta.(*api.Client)
+	client := meta.(*powerbiapi.Client)
 	datasources := d.Get("datasource").(*schema.Set)
 	datasetID := d.Get("dataset_id").(string)
 
 	if datasources != nil {
 		datasourceList := datasources.List()
 		if len(datasourceList) > 0 {
-			updateDatasourcesRequest := api.UpdateDatasourcesRequest{}
+			updateDatasourcesRequest := powerbiapi.UpdateDatasourcesRequest{}
 			for _, datasourceObj := range datasourceList {
 				datasourceObj := datasourceObj.(map[string]interface{})
-				updateDatasourcesRequest.UpdateDetails = append(updateDatasourcesRequest.UpdateDetails, api.UpdateDatasourcesRequestItem{
-					ConnectionDetails: api.UpdateDatasourcesRequestItemConnectionDetails{
+				updateDatasourcesRequest.UpdateDetails = append(updateDatasourcesRequest.UpdateDetails, powerbiapi.UpdateDatasourcesRequestItem{
+					ConnectionDetails: powerbiapi.UpdateDatasourcesRequestItemConnectionDetails{
 						URL:      emptyStringToNil(datasourceObj["url"].(string)),
 						Database: emptyStringToNil(datasourceObj["database"].(string)),
 						Server:   emptyStringToNil(datasourceObj["server"].(string)),
 					},
-					DatasourceSelector: api.UpdateDatasourcesRequestItemDatasourceSelector{
+					DatasourceSelector: powerbiapi.UpdateDatasourcesRequestItemDatasourceSelector{
 						DatasourceType: datasourceObj["type"].(string),
-						ConnectionDetails: api.UpdateDatasourcesRequestItemConnectionDetails{
+						ConnectionDetails: powerbiapi.UpdateDatasourcesRequestItemConnectionDetails{
 							URL:      emptyStringToNil(datasourceObj["original_url"].(string)),
 							Database: emptyStringToNil(datasourceObj["original_database"].(string)),
 							Server:   emptyStringToNil(datasourceObj["original_server"].(string)),
@@ -391,7 +392,7 @@ func setPBIXDatasources(d *schema.ResourceData, meta interface{}) error {
 
 func readPBIXDatasources(d *schema.ResourceData, meta interface{}) error {
 
-	client := meta.(*api.Client)
+	client := meta.(*powerbiapi.Client)
 
 	datasetID := d.Get("dataset_id").(string)
 	stateDatasources := d.Get("datasource").(*schema.Set)

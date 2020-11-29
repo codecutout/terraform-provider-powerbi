@@ -3,9 +3,6 @@ package powerbi
 import (
 	"encoding/hex"
 	"fmt"
-	"github.com/codecutout/terraform-provider-powerbi/powerbi/internal/api"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/terraform"
 	"io"
 	"math/rand"
 	"os"
@@ -13,6 +10,10 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/codecutout/terraform-provider-powerbi/internal/powerbiapi"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/terraform"
 )
 
 func TestAccPBIX_basic(t *testing.T) {
@@ -132,14 +133,14 @@ func TestAccPBIX_parameters(t *testing.T) {
 			{
 				PreConfig: func() {
 					//update paramter outside of terraform to simulate drift
-					client := testAccProvider.Meta().(*api.Client)
-					client.UpdateParameters(datasetID, api.UpdateParametersRequest{
-						UpdateDetails: []api.UpdateParametersRequestItem{
-							api.UpdateParametersRequestItem{
+					client := testAccProvider.Meta().(*powerbiapi.Client)
+					client.UpdateParameters(datasetID, powerbiapi.UpdateParametersRequest{
+						UpdateDetails: []powerbiapi.UpdateParametersRequestItem{
+							powerbiapi.UpdateParametersRequestItem{
 								Name:     "ParamOne",
 								NewValue: "DriftedValue",
 							},
-							api.UpdateParametersRequestItem{
+							powerbiapi.UpdateParametersRequestItem{
 								Name:     "ParamTwo",
 								NewValue: "DriftedValue",
 							},
@@ -233,16 +234,16 @@ func TestAccPBIX_datasources(t *testing.T) {
 			{
 				PreConfig: func() {
 					//update datasource outside of terraform to simulate drift
-					client := testAccProvider.Meta().(*api.Client)
-					client.UpdateDatasources(datasetID, api.UpdateDatasourcesRequest{
-						UpdateDetails: []api.UpdateDatasourcesRequestItem{
-							api.UpdateDatasourcesRequestItem{
-								ConnectionDetails: api.UpdateDatasourcesRequestItemConnectionDetails{
+					client := testAccProvider.Meta().(*powerbiapi.Client)
+					client.UpdateDatasources(datasetID, powerbiapi.UpdateDatasourcesRequest{
+						UpdateDetails: []powerbiapi.UpdateDatasourcesRequestItem{
+							powerbiapi.UpdateDatasourcesRequestItem{
+								ConnectionDetails: powerbiapi.UpdateDatasourcesRequestItemConnectionDetails{
 									URL: emptyStringToNil("https://google.com"),
 								},
-								DatasourceSelector: api.UpdateDatasourcesRequestItemDatasourceSelector{
+								DatasourceSelector: powerbiapi.UpdateDatasourcesRequestItemDatasourceSelector{
 									DatasourceType: "OData",
-									ConnectionDetails: api.UpdateDatasourcesRequestItemConnectionDetails{
+									ConnectionDetails: powerbiapi.UpdateDatasourcesRequestItemConnectionDetails{
 										URL: emptyStringToNil("https://services.odata.org/V3/(S(kbiqo1qkby04vnobw0li0fcp))/OData/OData.svc"),
 									},
 								},
@@ -344,7 +345,7 @@ func setUpdatedTime(pbixResourceName string, outUpdatedTime *time.Time) resource
 		if err != nil {
 			return err
 		}
-		client := testAccProvider.Meta().(*api.Client)
+		client := testAccProvider.Meta().(*powerbiapi.Client)
 		im, err := client.GetImport(pbixID)
 		if err != nil {
 			return err
@@ -362,7 +363,7 @@ func testCheckDatasetExistsInWorkspace(workspaceResourceName string, expectedDat
 		if err != nil {
 			return err
 		}
-		client := testAccProvider.Meta().(*api.Client)
+		client := testAccProvider.Meta().(*powerbiapi.Client)
 		datasets, err := client.GetDatasetsInGroup(groupID)
 		if err != nil {
 			return err
@@ -385,7 +386,7 @@ func testCheckDatasetDoesNotExistsInWorkspace(workspaceResourceName string, expe
 		if err != nil {
 			return err
 		}
-		client := testAccProvider.Meta().(*api.Client)
+		client := testAccProvider.Meta().(*powerbiapi.Client)
 		datasets, err := client.GetDatasetsInGroup(groupID)
 		if err != nil {
 			return err
@@ -406,7 +407,7 @@ func testCheckReportExistsInWorkspace(workspaceResourceName string, expectedRepo
 		if err != nil {
 			return err
 		}
-		client := testAccProvider.Meta().(*api.Client)
+		client := testAccProvider.Meta().(*powerbiapi.Client)
 		reports, err := client.GetReportsInGroup(groupID)
 		if err != nil {
 			return err
@@ -429,7 +430,7 @@ func testCheckReportDoesNotExistsInWorkspace(workspaceResourceName string, expec
 		if err != nil {
 			return err
 		}
-		client := testAccProvider.Meta().(*api.Client)
+		client := testAccProvider.Meta().(*powerbiapi.Client)
 		reports, err := client.GetReportsInGroup(groupID)
 
 		if err != nil {
@@ -451,7 +452,7 @@ func testCheckUpdatedAfter(pbixResourceName string, updatedAfter *time.Time) res
 		if err != nil {
 			return err
 		}
-		client := testAccProvider.Meta().(*api.Client)
+		client := testAccProvider.Meta().(*powerbiapi.Client)
 		im, err := client.GetImport(pbixID)
 		if err != nil {
 			return err
@@ -472,7 +473,7 @@ func testCheckUpdatedAt(pbixResourceName string, updatedAt *time.Time) resource.
 		if err != nil {
 			return err
 		}
-		client := testAccProvider.Meta().(*api.Client)
+		client := testAccProvider.Meta().(*powerbiapi.Client)
 		im, err := client.GetImport(pbixID)
 		if err != nil {
 			return err
@@ -500,7 +501,7 @@ func testCheckParameter(pbixResourceName string, expectedParameterName string, e
 			return fmt.Errorf("unable to find dataset_id on resource %s", pbixResourceName)
 		}
 
-		client := testAccProvider.Meta().(*api.Client)
+		client := testAccProvider.Meta().(*powerbiapi.Client)
 		params, err := client.GetParameters(datasetID)
 		if err != nil {
 			return err
@@ -534,7 +535,7 @@ func testCheckURLDatasource(pbixResourceName string, expectedValue string) resou
 			return fmt.Errorf("unable to find dataset_id on resource %s", pbixResourceName)
 		}
 
-		client := testAccProvider.Meta().(*api.Client)
+		client := testAccProvider.Meta().(*powerbiapi.Client)
 		datasources, err := client.GetDatasources(datasetID)
 		if err != nil {
 			return err

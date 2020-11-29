@@ -1,12 +1,10 @@
 # Power BI Provider
-The PowerBI provider can be used to configure Power BI resources using the Power BI REST API
-## Authentication
-To use Power BI REST APIs the following need to be configured
-1. A user with admin permission within Power BI. A user can be created by a domain owner, then Power BI admin permissions can be assigned via Office 365 admin center (link to the Office 365 admin center can be found within Power BI admin portal under users)
-1. An Azure Active Directory App registration with delegate permissions on 'Power BI Service"' for 'Content.Create'. Easiest way to configure this is via https://dev.powerbi.com/apps 
+The PowerBI provider can be used to configure Power BI resources using the [Power BI REST API](https://docs.microsoft.com/en-us/rest/api/power-bi/)
+
+-> See the [authentication guide](guides/authentication.md) for details on how to generate authetnication details
 
 ## Example Usage
-``` terraform
+```hcl
 provider "powerbi" {
 	tenant_id = "1c4cc30c-271e-47f2-891e-fef13f035bc7"
 	client_id = "f9ad3042-a969-4a31-826e-856d238df3b1"

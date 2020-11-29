@@ -1,14 +1,15 @@
-package api
+package powerbiapi
 
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/hashicorp/go-cleanhttp"
 	"io"
 	"io/ioutil"
 	"mime/multipart"
 	"net/http"
 	"net/textproto"
+
+	"github.com/hashicorp/go-cleanhttp"
 )
 
 // Client allows calling the Power BI service

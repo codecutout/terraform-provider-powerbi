@@ -2,10 +2,11 @@ package powerbi
 
 import (
 	"fmt"
-	"github.com/codecutout/terraform-provider-powerbi/powerbi/internal/api"
+	"testing"
+
+	"github.com/codecutout/terraform-provider-powerbi/internal/powerbiapi"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/terraform"
-	"testing"
 )
 
 func TestAccWorkspace_basic(t *testing.T) {
@@ -72,8 +73,8 @@ func TestAccWorkspace_skew(t *testing.T) {
 			// second step skew new title
 			{
 				PreConfig: func() {
-					client := testAccProvider.Meta().(*api.Client)
-					client.UpdateGroupAsAdmin(workspaceID, api.UpdateGroupAsAdminRequest{
+					client := testAccProvider.Meta().(*powerbiapi.Client)
+					client.UpdateGroupAsAdmin(workspaceID, powerbiapi.UpdateGroupAsAdminRequest{
 						Name: "Acceptance Test Workspace - Skewed",
 					})
 				},
@@ -85,7 +86,7 @@ func TestAccWorkspace_skew(t *testing.T) {
 			// third step skew by deleting group
 			{
 				PreConfig: func() {
-					client := testAccProvider.Meta().(*api.Client)
+					client := testAccProvider.Meta().(*powerbiapi.Client)
 					client.DeleteGroup(workspaceID)
 				},
 				Config: config,
@@ -108,7 +109,7 @@ func testCheckWorkspaceExistsWithName(rn string, expectedName string) resource.T
 			return fmt.Errorf("resource id not set")
 		}
 
-		client := testAccProvider.Meta().(*api.Client)
+		client := testAccProvider.Meta().(*powerbiapi.Client)
 		workspace, err := client.GetGroup(rs.Primary.ID)
 		if err != nil {
 			return err
@@ -128,7 +129,7 @@ func testCheckWorkspaceExistsWithName(rn string, expectedName string) resource.T
 
 func testAccCheckPowerbiWorkspaceDestroy(s *terraform.State) error {
 	// retrieve the connection established in Provider configuration
-	client := testAccProvider.Meta().(*api.Client)
+	client := testAccProvider.Meta().(*powerbiapi.Client)
 
 	// loop through the resources in state, verifying each widget
 	// is destroyed

@@ -1,8 +1,8 @@
-# powerbi_workspace
-powerbi_workspace represents a worksapce within Power BI (also called a Group)
+# Workspace Resource
+`powerbi_workspace` represents a worksapce within Power BI (also called a Group)
 
 ## Example Usage
-``` terraform
+```hcl
 resource "powerbi_workspace" "myworkspace" {
 	name = "Sample workspace"
 }

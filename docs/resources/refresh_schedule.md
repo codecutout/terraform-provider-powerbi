@@ -1,9 +1,9 @@
-# powerbi_refresh_schedule
-powerbi_refresh_schedule represents a dataset's refresh schedule
+# Refresh Schedule Resource
+`powerbi_refresh_schedule` represents a dataset's refresh schedule
 
 
 ## Example Usage
-``` terraform
+```hcl
 resource "powerbi_refresh_schedule" "test" {
 	dataset_id = "${powerbi_pbix.test.dataset_id}"
 	enabled = true

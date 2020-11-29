@@ -2,11 +2,12 @@ package docgen
 
 import (
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	"os"
 	"path/filepath"
 	"sort"
 	"strings"
+
+	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 )
 
 type property struct {
@@ -28,11 +29,12 @@ func PopulateTerraformDocs(folderpath string, providerName string, provider *sch
 		fileName := info.Name()
 		fileNameWithoutExtension := fileName[0:strings.LastIndex(fileName, ".")]
 
-		if fileNameWithoutExtension == providerName {
+		if fileNameWithoutExtension == "index" {
 			populateProviderDoc(path, provider)
 		}
 		for resourceName, resourceValue := range provider.ResourcesMap {
-			if fileNameWithoutExtension == resourceName {
+			resourceNameWithoutProvider := resourceName[strings.Index(resourceName, "_")+1:]
+			if resourceNameWithoutProvider == fileNameWithoutExtension || resourceName == fileNameWithoutExtension {
 				populateResourceDoc(path, resourceValue)
 			}
 		}

@@ -1,7 +1,7 @@
 package powerbi
 
 import (
-	"github.com/codecutout/terraform-provider-powerbi/powerbi/internal/api"
+	"github.com/codecutout/terraform-provider-powerbi/internal/powerbiapi"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 )
 
@@ -27,8 +27,8 @@ func ResourceWorkspace() *schema.Resource {
 }
 
 func createWorkspace(d *schema.ResourceData, meta interface{}) error {
-	client := meta.(*api.Client)
-	resp, err := client.CreateGroup(api.CreateGroupRequest{
+	client := meta.(*powerbiapi.Client)
+	resp, err := client.CreateGroup(powerbiapi.CreateGroupRequest{
 		Name: d.Get("name").(string),
 	})
 	if err != nil {
@@ -41,7 +41,7 @@ func createWorkspace(d *schema.ResourceData, meta interface{}) error {
 }
 
 func readWorkspace(d *schema.ResourceData, meta interface{}) error {
-	client := meta.(*api.Client)
+	client := meta.(*powerbiapi.Client)
 
 	workspace, err := client.GetGroup(d.Id())
 	if err != nil {
@@ -59,9 +59,9 @@ func readWorkspace(d *schema.ResourceData, meta interface{}) error {
 }
 
 func updateWorkspace(d *schema.ResourceData, meta interface{}) error {
-	client := meta.(*api.Client)
+	client := meta.(*powerbiapi.Client)
 
-	err := client.UpdateGroupAsAdmin(d.Id(), api.UpdateGroupAsAdminRequest{
+	err := client.UpdateGroupAsAdmin(d.Id(), powerbiapi.UpdateGroupAsAdminRequest{
 		Name: d.Get("name").(string),
 	})
 	if err != nil {
@@ -72,7 +72,7 @@ func updateWorkspace(d *schema.ResourceData, meta interface{}) error {
 }
 
 func deleteWorkspace(d *schema.ResourceData, meta interface{}) error {
-	client := meta.(*api.Client)
+	client := meta.(*powerbiapi.Client)
 
 	return client.DeleteGroup(d.Id())
 }

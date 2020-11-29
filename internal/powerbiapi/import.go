@@ -1,4 +1,4 @@
-package api
+package powerbiapi
 
 import (
 	"fmt"

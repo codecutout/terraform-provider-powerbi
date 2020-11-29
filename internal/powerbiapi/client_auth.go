@@ -1,14 +1,15 @@
-package api
+package powerbiapi
 
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/hashicorp/go-cleanhttp"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strings"
 	"sync"
+
+	"github.com/hashicorp/go-cleanhttp"
 )
 
 type tokenResponse struct {

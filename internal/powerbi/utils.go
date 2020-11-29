@@ -1,8 +1,9 @@
 package powerbi
 
 import (
-	"github.com/codecutout/terraform-provider-powerbi/powerbi/internal/api"
 	"net/url"
+
+	"github.com/codecutout/terraform-provider-powerbi/internal/powerbiapi"
 )
 
 func convertStringToPointer(s string) *string {
@@ -46,7 +47,7 @@ func isHTTP404Error(err error) bool {
 	return false
 }
 
-func toHTTPUnsuccessfulError(err error) (*api.HTTPUnsuccessfulError, bool) {
+func toHTTPUnsuccessfulError(err error) (*powerbiapi.HTTPUnsuccessfulError, bool) {
 	if err == nil {
 		return nil, false
 	}
@@ -55,7 +56,7 @@ func toHTTPUnsuccessfulError(err error) (*api.HTTPUnsuccessfulError, bool) {
 		err = urlErr.Unwrap()
 	}
 
-	if httpErr, isHTTPErr := err.(api.HTTPUnsuccessfulError); isHTTPErr {
+	if httpErr, isHTTPErr := err.(powerbiapi.HTTPUnsuccessfulError); isHTTPErr {
 		return &httpErr, true
 	}
 	return nil, false

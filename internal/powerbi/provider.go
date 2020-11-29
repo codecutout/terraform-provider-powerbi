@@ -1,7 +1,7 @@
 package powerbi
 
 import (
-	"github.com/codecutout/terraform-provider-powerbi/powerbi/internal/api"
+	"github.com/codecutout/terraform-provider-powerbi/internal/powerbiapi"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 )
 
@@ -54,7 +54,7 @@ func Provider() *schema.Provider {
 }
 
 func providerConfigure(d *schema.ResourceData) (interface{}, error) {
-	return api.NewClient(
+	return powerbiapi.NewClient(
 		d.Get("tenant_id").(string),
 		d.Get("client_id").(string),
 		d.Get("client_secret").(string),
