@@ -16,15 +16,17 @@ If you use Terraform 0.13 or greater, the provider can be installed from the [te
 ```terraform
 terraform {
   required_providers {
-    databricks = {
+    powerbi = {
       source = "codecutout/powerbi"
-      version = "1.0.0"
+      version = "1.0.1"
     }
   }
 }
 ```
 
-### Manual
+### Local
+If using terraform 0.12 plugins must be installed locally
+
 1. From the [releases](/releases) section download the zip file for your desired version, operating system and architecture
 2. Extract the zip file into `%APPDATA%\terraform.d\plugins` for windows, or `~/.terraform.d/plugins` for other systems
 3. `terraform init` should now detect usage of the provider and apply the plugin

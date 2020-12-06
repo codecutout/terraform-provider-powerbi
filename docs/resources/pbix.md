@@ -14,7 +14,7 @@ resource "powerbi_pbix" "mypbix" {
 	workspace_id = "470b0d57-1f23-4332-a16f-9235bd174318"
 	name = "My PBIX"
 	source = "./my-pbix.pbix"
-	source_hash = "${filemd5(".my-pbix.pbix")}"
+	source_hash = "${filemd5("./my-pbix.pbix")}"
 	datasource {
 		type = "OData"
 		url = "https://services.odata.org/V3/(S(kbiqo1qkby04vnobw0li0fcp))/OData/OData.svc"
