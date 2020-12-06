@@ -18,7 +18,7 @@ terraform {
   required_providers {
     powerbi = {
       source = "codecutout/powerbi"
-      version = "1.0.1"
+      version = "~>1.0"
     }
   }
 }
