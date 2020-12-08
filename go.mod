@@ -1,4 +1,4 @@
-module github.com/codecutout/terraform-provider-powerbi
+module github.com/ladlavj/terraform-provider-powerbi@v1.0.0-workspace
 
 go 1.13
 
