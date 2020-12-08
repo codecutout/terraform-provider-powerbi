@@ -15,6 +15,12 @@ func Provider() *schema.Provider {
 				DefaultFunc: schema.EnvDefaultFunc("POWERBI_TENANT_ID", ""),
 				Description: "The Tenant ID for the tenant which contains the Azure Active Directory App Registration to use for performing Power BI REST API operations. This can also be sourced from the `POWERBI_TENANT_ID` Environment Variable",
 			},
+			"grant_type": {
+				Type:        schema.TypeString,
+				Required:    true,
+				DefaultFunc: schema.EnvDefaultFunc("POWERBI_GRANT_TYPE", ""),
+				Description: "The grant type for the a Power BI to define token method using username and password or Application id with admin grants. This can also be sourced from the `POWERBI_GRANT_TYPE` Environment Variable",
+			},
 			"client_id": {
 				Type:        schema.TypeString,
 				Required:    true,
@@ -56,6 +62,7 @@ func Provider() *schema.Provider {
 func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 	return powerbiapi.NewClient(
 		d.Get("tenant_id").(string),
+		d.Get("grant_type").(string),
 		d.Get("client_id").(string),
 		d.Get("client_secret").(string),
 		d.Get("username").(string),

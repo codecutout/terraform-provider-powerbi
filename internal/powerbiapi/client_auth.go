@@ -21,6 +21,7 @@ type roundTripperBearerToken struct {
 	tenant            string
 	clientID          string
 	clientSecret      string
+	grantType         string
 	username          string
 	password          string
 	tokenCache        *roundTripperBearerTokenCache
@@ -47,7 +48,7 @@ func (rt roundTripperBearerToken) RoundTrip(req *http.Request) (*http.Response, 
 					innerRoundTripper: httpClient.Transport,
 				}
 
-				token, err := getAuthToken(httpClient, rt.tenant, rt.clientID, rt.clientSecret, rt.username, rt.password)
+				token, err := getAuthToken(httpClient, rt.grantType, rt.tenant, rt.clientID, rt.clientSecret, rt.username, rt.password)
 				if err != nil {
 					return err
 				}
@@ -67,6 +68,7 @@ func (rt roundTripperBearerToken) RoundTrip(req *http.Request) (*http.Response, 
 
 func getAuthToken(
 	httpClient *http.Client,
+	grantType string,
 	tenant string,
 	clientID string,
 	clientSecret string,
@@ -74,15 +76,19 @@ func getAuthToken(
 	password string,
 ) (string, error) {
 
-	authURL := fmt.Sprintf("https://login.microsoftonline.com/%s/oauth2/v2.0/token", url.PathEscape(tenant))
-	resp, err := httpClient.Post(authURL, "application/x-www-form-urlencoded", strings.NewReader(url.Values{
-		"grant_type":    {"password"},
+	getTokenURLValues := url.Values{
+		"grant_type":    {grantType},
 		"scope":         {"https://analysis.windows.net/powerbi/api/.default"},
 		"client_id":     {clientID},
 		"client_secret": {clientSecret},
-		"username":      {username},
-		"password":      {password},
-	}.Encode()))
+	}
+	if grantType == "password" {
+		getTokenURLValues.Add("username", username)
+		getTokenURLValues.Add("password", password)
+	}
+
+	authURL := fmt.Sprintf("https://login.microsoftonline.com/%s/oauth2/v2.0/token", url.PathEscape(tenant))
+	resp, err := httpClient.Post(authURL, "application/x-www-form-urlencoded", strings.NewReader(getTokenURLValues.Encode()))
 
 	if err != nil {
 		return "", err

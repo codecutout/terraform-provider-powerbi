@@ -22,71 +22,71 @@ type GetDatasetsInGroupResponseItem struct {
 	TargetStorageMode                string
 }
 
-// GetParametersResponse represents the response from get parameters
-type GetParametersResponse struct {
-	Value []GetParametersResponseItem
+// GetParametersInGroupResponse represents the response from get parameters
+type GetParametersInGroupResponse struct {
+	Value []GetParametersInGroupResponseItem
 }
 
-// GetParametersResponseItem represents a single parameter
-type GetParametersResponseItem struct {
+// GetParametersInGroupResponseItem represents a single parameter
+type GetParametersInGroupResponseItem struct {
 	Name         string
 	Type         string
 	IsRequired   bool
 	CurrentValue string
 }
 
-// UpdateParametersRequest represents the request to update parameters
-type UpdateParametersRequest struct {
-	UpdateDetails []UpdateParametersRequestItem
+// UpdateParametersInGroupRequest represents the request to update parameters
+type UpdateParametersInGroupRequest struct {
+	UpdateDetails []UpdateParametersInGroupRequestItem
 }
 
-// UpdateParametersRequestItem represents a single parameter update
-type UpdateParametersRequestItem struct {
+// UpdateParametersInGroupRequestItem represents a single parameter update
+type UpdateParametersInGroupRequestItem struct {
 	Name     string
 	NewValue string
 }
 
-// GetDatasourcesResponse represents the response from get datasources
-type GetDatasourcesResponse struct {
-	Value []GetDatasourcesResponseItem
+// GetDatasourcesInGroupResponse represents the response from get datasources
+type GetDatasourcesInGroupResponse struct {
+	Value []GetDatasourcesInGroupResponseItem
 }
 
-// GetDatasourcesResponseItem represents a single datasource
-type GetDatasourcesResponseItem struct {
+// GetDatasourcesInGroupResponseItem represents a single datasource
+type GetDatasourcesInGroupResponseItem struct {
 	DatasourceID      string
 	DatasourceType    string
 	GatewayID         string
 	Name              string
 	CopnnectionString string
-	ConnectionDetails GetDatasourcesResponseItemConnectionDetails
+	ConnectionDetails GetDatasourcesInGroupResponseItemConnectionDetails
 }
 
-// GetDatasourcesResponseItemConnectionDetails represents connection details for a single datasource
-type GetDatasourcesResponseItemConnectionDetails struct {
+// GetDatasourcesInGroupResponseItemConnectionDetails represents connection details for a single datasource
+type GetDatasourcesInGroupResponseItemConnectionDetails struct {
 	Database *string
 	Server   *string
 	URL      *string
 }
 
-// UpdateDatasourcesRequest represents the request to update datasources
-type UpdateDatasourcesRequest struct {
-	UpdateDetails []UpdateDatasourcesRequestItem
+// UpdateDatasourcesInGroupRequest represents the request to update datasources
+type UpdateDatasourcesInGroupRequest struct {
+	UpdateDetails []UpdateDatasourcesInGroupRequestItem
 }
 
-// UpdateDatasourcesRequestItem represents a single datasource update
-type UpdateDatasourcesRequestItem struct {
-	DatasourceSelector UpdateDatasourcesRequestItemDatasourceSelector
-	ConnectionDetails  UpdateDatasourcesRequestItemConnectionDetails
+// UpdateDatasourcesInGroupRequestItem represents a single datasource update
+type UpdateDatasourcesInGroupRequestItem struct {
+	DatasourceSelector UpdateDatasourcesInGroupRequestItemDatasourceSelector
+	ConnectionDetails  UpdateDatasourcesInGroupRequestItemConnectionDetails
 }
 
-// UpdateDatasourcesRequestItemDatasourceSelector represents a query to select a datasource
-type UpdateDatasourcesRequestItemDatasourceSelector struct {
+// UpdateDatasourcesInGroupRequestItemDatasourceSelector represents a query to select a datasource
+type UpdateDatasourcesInGroupRequestItemDatasourceSelector struct {
 	DatasourceType    string
-	ConnectionDetails UpdateDatasourcesRequestItemConnectionDetails
+	ConnectionDetails UpdateDatasourcesInGroupRequestItemConnectionDetails
 }
 
-// UpdateDatasourcesRequestItemConnectionDetails represents connection details for a single datasource
-type UpdateDatasourcesRequestItemConnectionDetails struct {
+// UpdateDatasourcesInGroupRequestItemConnectionDetails represents connection details for a single datasource
+type UpdateDatasourcesInGroupRequestItemConnectionDetails struct {
 	Database *string
 	Server   *string
 	URL      *string
@@ -125,58 +125,58 @@ func (client *Client) GetDatasetsInGroup(groupID string) (*GetDatasetsInGroupRes
 	return &respObj, err
 }
 
-// DeleteDataset deletes a dataset.
-func (client *Client) DeleteDataset(datasetID string) error {
+// DeleteDatasetInGroup deletes a dataset within the specified group.
+func (client *Client) DeleteDatasetInGroup(groupID string, datasetID string) error {
 
-	url := fmt.Sprintf("https://api.powerbi.com/v1.0/myorg/datasets/%s", url.PathEscape(datasetID))
+	url := fmt.Sprintf("https://api.powerbi.com/v1.0/myorg/groups/%s/datasets/%s", url.PathEscape(groupID), url.PathEscape(datasetID))
 	err := client.doJSON("DELETE", url, nil, nil)
 
 	return err
 }
 
-// GetParameters gets parameters in a dataset.
-func (client *Client) GetParameters(datasetID string) (*GetParametersResponse, error) {
+// GetParametersInGroup gets parameters in a dataset within the specified group.
+func (client *Client) GetParametersInGroup(groupID string, datasetID string) (*GetParametersInGroupResponse, error) {
 
-	var respObj GetParametersResponse
-	url := fmt.Sprintf("https://api.powerbi.com/v1.0/myorg/datasets/%s/parameters", url.PathEscape(datasetID))
+	var respObj GetParametersInGroupResponse
+	url := fmt.Sprintf("https://api.powerbi.com/v1.0/myorg/groups/%s/datasets/%s/parameters", url.PathEscape(groupID), url.PathEscape(datasetID))
 	err := client.doJSON("GET", url, nil, &respObj)
 
 	return &respObj, err
 }
 
-// UpdateParameters updates parameters in a dataset.
-func (client *Client) UpdateParameters(datasetID string, request UpdateParametersRequest) error {
+// UpdateParametersInGroup updates parameters in a dataset within the specified group.
+func (client *Client) UpdateParametersInGroup(groupID string, datasetID string, request UpdateParametersInGroupRequest) error {
 
-	url := fmt.Sprintf("https://api.powerbi.com/v1.0/myorg/datasets/%s/Default.UpdateParameters", url.PathEscape(datasetID))
+	url := fmt.Sprintf("https://api.powerbi.com/v1.0/myorg/groups/%s/datasets/%s/Default.UpdateParameters", url.PathEscape(groupID), url.PathEscape(datasetID))
 	err := client.doJSON("POST", url, &request, nil)
 
 	return err
 }
 
-// GetDatasources gets datasources in a dataset.
-func (client *Client) GetDatasources(datasetID string) (*GetDatasourcesResponse, error) {
+// GetDatasourcesInGroup gets datasources in a dataset within the specified group.
+func (client *Client) GetDatasourcesInGroup(groupID string, datasetID string) (*GetDatasourcesInGroupResponse, error) {
 
-	var respObj GetDatasourcesResponse
-	url := fmt.Sprintf("https://api.powerbi.com/v1.0/myorg/datasets/%s/datasources", url.PathEscape(datasetID))
+	var respObj GetDatasourcesInGroupResponse
+	url := fmt.Sprintf("https://api.powerbi.com/v1.0/myorg/groups/%s/datasets/%s/datasources", url.PathEscape(groupID), url.PathEscape(datasetID))
 	err := client.doJSON("GET", url, nil, &respObj)
 
 	return &respObj, err
 }
 
-// UpdateDatasources updates datasources in a dataset.
-func (client *Client) UpdateDatasources(datasetID string, request UpdateDatasourcesRequest) error {
+// UpdateDatasourcesInGroup updates datasources in a dataset within the specified group.
+func (client *Client) UpdateDatasourcesInGroup(groupID string, datasetID string, request UpdateDatasourcesInGroupRequest) error {
 
-	url := fmt.Sprintf("https://api.powerbi.com/v1.0/myorg/datasets/%s/Default.UpdateDatasources", url.PathEscape(datasetID))
+	url := fmt.Sprintf("https://api.powerbi.com/v1.0/myorg/groups/%s/datasets/%s/Default.UpdateDatasources", url.PathEscape(groupID), url.PathEscape(datasetID))
 	err := client.doJSON("POST", url, &request, nil)
 
 	return err
 }
 
-// GetRefreshSchedule gets a datasource's refresh schedule.
-func (client *Client) GetRefreshSchedule(datasetID string) (*GetRefreshScheduleResponse, error) {
+// GetRefreshScheduleInGroup gets a datasource's refresh schedule.
+func (client *Client) GetRefreshScheduleInGroup(groupID string, datasetID string) (*GetRefreshScheduleResponse, error) {
 
 	var respObj GetRefreshScheduleResponse
-	url := fmt.Sprintf("https://api.powerbi.com/v1.0/myorg/datasets/%s/refreshSchedule", url.PathEscape(datasetID))
+	url := fmt.Sprintf("https://api.powerbi.com/v1.0/myorg/groups/%s/datasets/%s/refreshSchedule", url.PathEscape(groupID), url.PathEscape(datasetID))
 	err := client.doJSON("GET", url, nil, &respObj)
 
 	return &respObj, err

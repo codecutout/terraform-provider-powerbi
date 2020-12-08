@@ -46,7 +46,7 @@ func TestAccPBIX_basic(t *testing.T) {
 				}
 				`, workspaceSuffix, pbixLocationTfFriendly, pbixLocationTfFriendly),
 				Check: resource.ComposeTestCheckFunc(
-					setUpdatedTime("powerbi_pbix.test", &updatedTime),
+					setUpdatedTime("powerbi_workspace.test", "powerbi_pbix.test", &updatedTime),
 					testCheckDatasetExistsInWorkspace("powerbi_workspace.test", "Acceptance Test PBIX"),
 					testCheckReportExistsInWorkspace("powerbi_workspace.test", "Acceptance Test PBIX"),
 					resource.TestCheckResourceAttrSet("powerbi_pbix.test", "id"),
@@ -73,7 +73,7 @@ func TestAccPBIX_basic(t *testing.T) {
 				}
 				`, workspaceSuffix, pbixLocationTfFriendly, pbixLocationTfFriendly),
 				Check: resource.ComposeTestCheckFunc(
-					testCheckUpdatedAfter("powerbi_pbix.test", &updatedTime), //update has occured since creation
+					testCheckUpdatedAfter("powerbi_workspace.test", "powerbi_pbix.test", &updatedTime), //update has occured since creation
 					testCheckDatasetExistsInWorkspace("powerbi_workspace.test", "Acceptance Test PBIX"),
 					testCheckReportExistsInWorkspace("powerbi_workspace.test", "Acceptance Test PBIX"),
 					resource.TestCheckResourceAttrSet("powerbi_pbix.test", "id"),
@@ -104,6 +104,7 @@ func TestAccPBIX_parameters(t *testing.T) {
 	var datasetID string
 	workspaceSuffix := acctest.RandString(6)
 
+	var groupID string
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
@@ -129,7 +130,7 @@ func TestAccPBIX_parameters(t *testing.T) {
 				`, workspaceSuffix),
 				Check: resource.ComposeTestCheckFunc(
 					set("powerbi_pbix.test", "dataset_id", &datasetID),
-					setUpdatedTime("powerbi_pbix.test", &updatedTime),
+					setUpdatedTime("powerbi_workspace.test", "powerbi_pbix.test", &updatedTime),
 					testCheckParameter("powerbi_pbix.test", "ParamOne", "NewParamValueOne"),
 				),
 			},
@@ -138,8 +139,8 @@ func TestAccPBIX_parameters(t *testing.T) {
 				PreConfig: func() {
 					//update paramter outside of terraform to simulate drift
 					client := testAccProvider.Meta().(*powerbiapi.Client)
-					client.UpdateParameters(datasetID, powerbiapi.UpdateParametersRequest{
-						UpdateDetails: []powerbiapi.UpdateParametersRequestItem{
+					client.UpdateParametersInGroup(groupID, datasetID, powerbiapi.UpdateParametersInGroupRequest{
+						UpdateDetails: []powerbiapi.UpdateParametersInGroupRequestItem{
 							{
 								Name:     "ParamOne",
 								NewValue: "DriftedValue",
@@ -168,7 +169,7 @@ func TestAccPBIX_parameters(t *testing.T) {
 				}
 				`, workspaceSuffix),
 				Check: resource.ComposeTestCheckFunc(
-					testCheckUpdatedAt("powerbi_pbix.test", &updatedTime), //import should not be updated
+					testCheckUpdatedAt("powerbi_workspace.test", "powerbi_pbix.test", &updatedTime), //import should not be updated
 					testCheckParameter("powerbi_pbix.test", "ParamOne", "NewParamValueOne"),
 					testCheckParameter("powerbi_pbix.test", "ParamTwo", "DriftedValue"),
 				),
@@ -192,8 +193,8 @@ func TestAccPBIX_parameters(t *testing.T) {
 				}
 				`, workspaceSuffix),
 				Check: resource.ComposeTestCheckFunc(
-					testCheckUpdatedAfter("powerbi_pbix.test", &updatedTime),                //import should be updated
-					testCheckParameter("powerbi_pbix.test", "ParamOne", "NewParamValueOne"), //new value maintained
+					testCheckUpdatedAfter("powerbi_workspace.test", "powerbi_pbix.test", &updatedTime), //import should be updated
+					testCheckParameter("powerbi_pbix.test", "ParamOne", "NewParamValueOne"),            //new value maintained
 					testCheckParameter("powerbi_pbix.test", "ParamTwo", "ParamTwoValue"),
 				),
 			},
@@ -206,6 +207,7 @@ func TestAccPBIX_datasources(t *testing.T) {
 	var datasetID string
 	workspaceSuffix := acctest.RandString(6)
 
+	var groupID string
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
@@ -232,7 +234,7 @@ func TestAccPBIX_datasources(t *testing.T) {
 				`, workspaceSuffix),
 				Check: resource.ComposeTestCheckFunc(
 					set("powerbi_pbix.test", "dataset_id", &datasetID),
-					setUpdatedTime("powerbi_pbix.test", &updatedTime),
+					setUpdatedTime("powerbi_workspace.test", "powerbi_pbix.test", &updatedTime),
 					testCheckURLDatasource("powerbi_pbix.test", "https://services.odata.org/V3/(S(kbiqo1qkby04vnobw0li0fcp))/OData/OData.svc"),
 				),
 			},
@@ -241,15 +243,15 @@ func TestAccPBIX_datasources(t *testing.T) {
 				PreConfig: func() {
 					//update datasource outside of terraform to simulate drift
 					client := testAccProvider.Meta().(*powerbiapi.Client)
-					client.UpdateDatasources(datasetID, powerbiapi.UpdateDatasourcesRequest{
-						UpdateDetails: []powerbiapi.UpdateDatasourcesRequestItem{
+					client.UpdateDatasourcesInGroup(groupID, datasetID, powerbiapi.UpdateDatasourcesInGroupRequest{
+						UpdateDetails: []powerbiapi.UpdateDatasourcesInGroupRequestItem{
 							{
-								ConnectionDetails: powerbiapi.UpdateDatasourcesRequestItemConnectionDetails{
+								ConnectionDetails: powerbiapi.UpdateDatasourcesInGroupRequestItemConnectionDetails{
 									URL: emptyStringToNil("https://google.com"),
 								},
-								DatasourceSelector: powerbiapi.UpdateDatasourcesRequestItemDatasourceSelector{
+								DatasourceSelector: powerbiapi.UpdateDatasourcesInGroupRequestItemDatasourceSelector{
 									DatasourceType: "OData",
-									ConnectionDetails: powerbiapi.UpdateDatasourcesRequestItemConnectionDetails{
+									ConnectionDetails: powerbiapi.UpdateDatasourcesInGroupRequestItemConnectionDetails{
 										URL: emptyStringToNil("https://services.odata.org/V3/(S(kbiqo1qkby04vnobw0li0fcp))/OData/OData.svc"),
 									},
 								},
@@ -275,7 +277,7 @@ func TestAccPBIX_datasources(t *testing.T) {
 				}
 				`, workspaceSuffix),
 				Check: resource.ComposeTestCheckFunc(
-					testCheckUpdatedAfter("powerbi_pbix.test", &updatedTime), //import should be updated
+					testCheckUpdatedAfter("powerbi_workspace.test", "powerbi_pbix.test", &updatedTime), //import should be updated
 					testCheckURLDatasource("powerbi_pbix.test", "https://services.odata.org/V3/(S(kbiqo1qkby04vnobw0li0fcp))/OData/OData.svc"),
 				),
 			},
@@ -345,14 +347,20 @@ func set(resourceName string, configName string, outID *string) resource.TestChe
 	}
 }
 
-func setUpdatedTime(pbixResourceName string, outUpdatedTime *time.Time) resource.TestCheckFunc {
+func setUpdatedTime(workspaceResourceName string, pbixResourceName string, outUpdatedTime *time.Time) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		pbixID, err := getID(s, pbixResourceName)
 		if err != nil {
 			return err
 		}
+
+		groupID, err := getID(s, workspaceResourceName)
+		if err != nil {
+			return err
+		}
+
 		client := testAccProvider.Meta().(*powerbiapi.Client)
-		im, err := client.GetImport(pbixID)
+		im, err := client.GetImportInGroup(groupID, pbixID)
 		if err != nil {
 			return err
 		}
@@ -452,14 +460,18 @@ func testCheckReportDoesNotExistsInWorkspace(workspaceResourceName string, expec
 	}
 }
 
-func testCheckUpdatedAfter(pbixResourceName string, updatedAfter *time.Time) resource.TestCheckFunc {
+func testCheckUpdatedAfter(workspaceResourceName string, pbixResourceName string, updatedAfter *time.Time) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		pbixID, err := getID(s, pbixResourceName)
 		if err != nil {
 			return err
 		}
+		groupID, err := getID(s, workspaceResourceName)
+		if err != nil {
+			return err
+		}
 		client := testAccProvider.Meta().(*powerbiapi.Client)
-		im, err := client.GetImport(pbixID)
+		im, err := client.GetImportInGroup(groupID, pbixID)
 		if err != nil {
 			return err
 		}
@@ -473,14 +485,18 @@ func testCheckUpdatedAfter(pbixResourceName string, updatedAfter *time.Time) res
 	}
 }
 
-func testCheckUpdatedAt(pbixResourceName string, updatedAt *time.Time) resource.TestCheckFunc {
+func testCheckUpdatedAt(workspaceResourceName string, pbixResourceName string, updatedAt *time.Time) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 		pbixID, err := getID(s, pbixResourceName)
 		if err != nil {
 			return err
 		}
+		groupID, err := getID(s, workspaceResourceName)
+		if err != nil {
+			return err
+		}
 		client := testAccProvider.Meta().(*powerbiapi.Client)
-		im, err := client.GetImport(pbixID)
+		im, err := client.GetImportInGroup(groupID, pbixID)
 		if err != nil {
 			return err
 		}
@@ -507,8 +523,13 @@ func testCheckParameter(pbixResourceName string, expectedParameterName string, e
 			return fmt.Errorf("unable to find dataset_id on resource %s", pbixResourceName)
 		}
 
+		groupID, ok := rs.Primary.Attributes["workspace_id"]
+		if !ok {
+			return fmt.Errorf("unable to find workspace_id %s", pbixResourceName)
+		}
+
 		client := testAccProvider.Meta().(*powerbiapi.Client)
-		params, err := client.GetParameters(datasetID)
+		params, err := client.GetParametersInGroup(groupID, datasetID)
 		if err != nil {
 			return err
 		}
@@ -541,8 +562,13 @@ func testCheckURLDatasource(pbixResourceName string, expectedValue string) resou
 			return fmt.Errorf("unable to find dataset_id on resource %s", pbixResourceName)
 		}
 
+		groupID, ok := rs.Primary.Attributes["workspace_id"]
+		if !ok {
+			return fmt.Errorf("unable to find workspace_id %s", pbixResourceName)
+		}
+
 		client := testAccProvider.Meta().(*powerbiapi.Client)
-		datasources, err := client.GetDatasources(datasetID)
+		datasources, err := client.GetDatasourcesInGroup(groupID, datasetID)
 		if err != nil {
 			return err
 		}

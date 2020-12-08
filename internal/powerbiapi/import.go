@@ -123,13 +123,38 @@ func (client *Client) PostImportInGroup(groupID string, datasetDisplayName strin
 }
 
 // WaitForImportToSucceed waits until the specified import
-func (client *Client) WaitForImportToSucceed(importID string, timeout time.Duration) (*GetImportResponse, error) {
+// func (client *Client) WaitForImportToSucceed(importID string, timeout time.Duration) (*GetImportResponse, error) {
+// 	ticker := time.NewTicker(time.Second)
+// 	defer ticker.Stop()
+
+// 	started := time.Now()
+// 	for {
+// 		im, err := client.GetImport(importID)
+// 		if err != nil {
+// 			return nil, err
+// 		}
+
+// 		if im.ImportState == "Succeeded" {
+// 			return im, nil
+// 		} else if im.ImportState != "Publishing" {
+// 			return im, fmt.Errorf("Import completed with invalid state '%s'", im.ImportState)
+// 		}
+
+// 		now := <-ticker.C
+// 		if now.Sub(started) > timeout {
+// 			return nil, fmt.Errorf("Timed out waiting for import to complete. Import taking longer than %v seconds", timeout.Seconds())
+// 		}
+// 	}
+// }
+
+// WaitForImportToSucceed in group waits until the specified import
+func (client *Client) WaitForImportInGroupToSucceed(groupID string, importID string, timeout time.Duration) (*GetImportInGroupResponse, error) {
 	ticker := time.NewTicker(time.Second)
 	defer ticker.Stop()
 
 	started := time.Now()
 	for {
-		im, err := client.GetImport(importID)
+		im, err := client.GetImportInGroup(groupID, importID)
 		if err != nil {
 			return nil, err
 		}

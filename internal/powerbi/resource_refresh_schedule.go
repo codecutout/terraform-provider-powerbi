@@ -83,6 +83,17 @@ func getDatasetID(d *schema.ResourceData, meta interface{}) (string, error) {
 	return datasetID, nil
 }
 
+func getGroupID(d *schema.ResourceData, meta interface{}) (string, error) {
+	groupID := d.Get("workspace_id").(string)
+	if groupID == "" {
+		groupID = d.Id()
+	}
+	if groupID == "" {
+		return "", fmt.Errorf("Unable to determine dataset ID. Ensure dataset_id is set")
+	}
+	return groupID, nil
+}
+
 func validateConfig(d *schema.ResourceData, meta interface{}) error {
 	// schema validate functions do not yet support lists and maps
 	// creating own makeshift validation to check days and times
@@ -169,7 +180,11 @@ func readRefreshSchedule(d *schema.ResourceData, meta interface{}) error {
 	if err != nil {
 		return err
 	}
-	refreshSchedule, err := client.GetRefreshSchedule(datasetID)
+	groupID, err := getGroupID(d, meta)
+	if err != nil {
+		return err
+	}
+	refreshSchedule, err := client.GetRefreshScheduleInGroup(groupID, datasetID)
 	if isHTTP404Error(err) {
 		d.SetId("")
 		return nil
