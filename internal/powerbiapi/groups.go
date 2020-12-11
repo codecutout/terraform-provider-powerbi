@@ -16,6 +16,12 @@ type CreateGroupResponse struct {
 	ID                    string
 	IsOnDedicatedCapacity bool
 	Name                  string
+	CapacityID            string
+}
+
+// GroupAssignToCapacityRequest represents the request for Assigning capacity to group API.
+type GroupAssignToCapacityRequest struct {
+	CapacityID string `json:"capacityId"`
 }
 
 // GetGroupsResponse represents the response from the GetGroups API
@@ -28,6 +34,7 @@ type GetGroupsResponseItem struct {
 	ID                    string
 	IsOnDedicatedCapacity bool
 	Name                  string
+	CapacityID            string
 }
 
 // GetGroupResponse represents the details when getting an individual group
@@ -35,6 +42,7 @@ type GetGroupResponse struct {
 	ID                    string
 	IsOnDedicatedCapacity bool
 	Name                  string
+	CapacityID            string
 }
 
 // CreateGroup creates new workspace
@@ -85,6 +93,7 @@ func (client *Client) GetGroup(groupID string) (*GetGroupResponse, error) {
 		ID:                    singleGroup.ID,
 		IsOnDedicatedCapacity: singleGroup.IsOnDedicatedCapacity,
 		Name:                  singleGroup.Name,
+		CapacityID:            singleGroup.CapacityID,
 	}, nil
 }
 
@@ -92,4 +101,12 @@ func (client *Client) GetGroup(groupID string) (*GetGroupResponse, error) {
 func (client *Client) DeleteGroup(groupID string) error {
 	url := fmt.Sprintf("https://api.powerbi.com/v1.0/myorg/groups/%s", url.PathEscape(groupID))
 	return client.doJSON("DELETE", url, nil, nil)
+}
+
+// GroupAssignToCapacity assigns capcity to a workspace
+func (client *Client) GroupAssignToCapacity(groupID string, request GroupAssignToCapacityRequest) error {
+	url := fmt.Sprintf("https://api.powerbi.com/v1.0/myorg/groups/%s/AssignToCapacity", url.PathEscape(groupID))
+	err := client.doJSON("POST", url, &request, nil)
+
+	return err
 }

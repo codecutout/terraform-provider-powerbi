@@ -67,10 +67,10 @@ func (client *Client) PostDatasetInGroup(groupID string, defaultRetentionPolicy 
 }
 
 // GetTables gets the tables in a push dataset.
-func (client *Client) GetTables(datasetID string) (*GetTablesResponse, error) {
+func (client *Client) GetTables(groupID string, datasetID string) (*GetTablesResponse, error) {
 
 	var respObj GetTablesResponse
-	url := fmt.Sprintf("https://api.powerbi.com/v1.0/myorg/datasets/%s/tables", url.PathEscape(datasetID))
+	url := fmt.Sprintf("https://api.powerbi.com/v1.0/myorg/groups/%s/datasets/%s/tables", url.PathEscape(groupID), url.PathEscape(datasetID))
 	err := client.doJSON("GET", url, nil, &respObj)
 
 	return &respObj, err

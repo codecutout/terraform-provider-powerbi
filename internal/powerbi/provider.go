@@ -36,13 +36,13 @@ func Provider() *schema.Provider {
 			},
 			"username": {
 				Type:        schema.TypeString,
-				Required:    true,
+				Optional:    true,
 				DefaultFunc: schema.EnvDefaultFunc("POWERBI_USERNAME", ""),
 				Description: "The username for the a Power BI user to use for performing Power BI REST API operations. Power BI only supports delegate permissions so a real user must be specified. This can also be sourced from the `POWERBI_USERNAME` Environment Variable",
 			},
 			"password": {
 				Type:        schema.TypeString,
-				Required:    true,
+				Optional:    true,
 				Sensitive:   true,
 				DefaultFunc: schema.EnvDefaultFunc("POWERBI_PASSWORD", ""),
 				Description: "The password for the a Power BI user to use for performing Power BI REST API operations. Power BI only supports delegate permissions so a real user must be specified. This can also be sourced from the `POWERBI_PASSWORD` Environment Variable",

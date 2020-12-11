@@ -139,6 +139,8 @@ func TestAccPBIX_parameters(t *testing.T) {
 				PreConfig: func() {
 					//update paramter outside of terraform to simulate drift
 					client := testAccProvider.Meta().(*powerbiapi.Client)
+					groups, _ := client.GetGroups(fmt.Sprintf("name eq 'Acceptance Test Workspace %s'", workspaceSuffix), -1, 0)
+					groupID = groups.Value[0].ID
 					client.UpdateParametersInGroup(groupID, datasetID, powerbiapi.UpdateParametersInGroupRequest{
 						UpdateDetails: []powerbiapi.UpdateParametersInGroupRequestItem{
 							{
@@ -243,6 +245,8 @@ func TestAccPBIX_datasources(t *testing.T) {
 				PreConfig: func() {
 					//update datasource outside of terraform to simulate drift
 					client := testAccProvider.Meta().(*powerbiapi.Client)
+					groups, _ := client.GetGroups(fmt.Sprintf("name eq 'Acceptance Test Workspace %s'", workspaceSuffix), -1, 0)
+					groupID = groups.Value[0].ID
 					client.UpdateDatasourcesInGroup(groupID, datasetID, powerbiapi.UpdateDatasourcesInGroupRequest{
 						UpdateDetails: []powerbiapi.UpdateDatasourcesInGroupRequestItem{
 							{

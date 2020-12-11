@@ -179,13 +179,14 @@ func (client *Client) GetRefreshScheduleInGroup(groupID string, datasetID string
 	url := fmt.Sprintf("https://api.powerbi.com/v1.0/myorg/groups/%s/datasets/%s/refreshSchedule", url.PathEscape(groupID), url.PathEscape(datasetID))
 	err := client.doJSON("GET", url, nil, &respObj)
 
+	// fmt.Printf("getrefreshschedule url %s and resp %v\n", url, respObj)
 	return &respObj, err
 }
 
-// UpdateRefreshSchedule updates a datasource's refresh schedule.
-func (client *Client) UpdateRefreshSchedule(datasetID string, request UpdateRefreshScheduleRequest) error {
+// UpdateRefreshScheduleInGroup updates a datasource's refresh schedule.
+func (client *Client) UpdateRefreshScheduleInGroup(groupID string, datasetID string, request UpdateRefreshScheduleRequest) error {
 
-	url := fmt.Sprintf("https://api.powerbi.com/v1.0/myorg/datasets/%s/refreshSchedule", url.PathEscape(datasetID))
+	url := fmt.Sprintf("https://api.powerbi.com/v1.0/myorg/groups/%s/datasets/%s/refreshSchedule", url.PathEscape(groupID), url.PathEscape(datasetID))
 	err := client.doJSON("PATCH", url, &request, nil)
 
 	return err

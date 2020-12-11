@@ -147,7 +147,7 @@ func (client *Client) PostImportInGroup(groupID string, datasetDisplayName strin
 // 	}
 // }
 
-// WaitForImportToSucceed in group waits until the specified import
+// WaitForImportInGroupToSucceed in group waits until the specified import
 func (client *Client) WaitForImportInGroupToSucceed(groupID string, importID string, timeout time.Duration) (*GetImportInGroupResponse, error) {
 	ticker := time.NewTicker(time.Second)
 	defer ticker.Stop()

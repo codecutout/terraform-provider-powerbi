@@ -20,6 +20,12 @@ func ResourceRefreshSchedule() *schema.Resource {
 		},
 
 		Schema: map[string]*schema.Schema{
+			"workspace_id": {
+				Type:        schema.TypeString,
+				Description: "Workspace ID in which the dataset was deployed.",
+				Required:    true,
+				ForceNew:    true,
+			},
 			"dataset_id": {
 				Type:        schema.TypeString,
 				Description: "The ID for the dataset that was deployed as part of the PBIX.",
@@ -85,12 +91,11 @@ func getDatasetID(d *schema.ResourceData, meta interface{}) (string, error) {
 
 func getGroupID(d *schema.ResourceData, meta interface{}) (string, error) {
 	groupID := d.Get("workspace_id").(string)
+
 	if groupID == "" {
-		groupID = d.Id()
+		return "", fmt.Errorf("Unable to determine workspace ID. Ensure workspace_id is set")
 	}
-	if groupID == "" {
-		return "", fmt.Errorf("Unable to determine dataset ID. Ensure dataset_id is set")
-	}
+
 	return groupID, nil
 }
 
@@ -144,8 +149,12 @@ func createRefreshSchedule(d *schema.ResourceData, meta interface{}) error {
 	if err != nil {
 		return err
 	}
+	groupID, err := getGroupID(d, meta)
+	if err != nil {
+		return err
+	}
 
-	err = client.UpdateRefreshSchedule(datasetID, powerbiapi.UpdateRefreshScheduleRequest{
+	err = client.UpdateRefreshScheduleInGroup(groupID, datasetID, powerbiapi.UpdateRefreshScheduleRequest{
 		Value: powerbiapi.UpdateRefreshScheduleRequestValue{
 			Enabled:         convertBoolToPointer(true), // API doesnt allow updating if disabled
 			Days:            convertStringSliceToPointer(convertToStringSlice(d.Get("days").([]interface{}))),
@@ -160,7 +169,7 @@ func createRefreshSchedule(d *schema.ResourceData, meta interface{}) error {
 
 	// Set the disabled flag to be the correct value
 	if enabled == nil {
-		err := client.UpdateRefreshSchedule(datasetID, powerbiapi.UpdateRefreshScheduleRequest{
+		err := client.UpdateRefreshScheduleInGroup(groupID, datasetID, powerbiapi.UpdateRefreshScheduleRequest{
 			Value: powerbiapi.UpdateRefreshScheduleRequestValue{
 				Enabled: convertBoolToPointer(false),
 			},
@@ -246,8 +255,12 @@ func updateRefreshSchedule(d *schema.ResourceData, meta interface{}) error {
 	if err != nil {
 		return err
 	}
+	groupID, err := getGroupID(d, meta)
+	if err != nil {
+		return err
+	}
 	if updateRequired {
-		err := client.UpdateRefreshSchedule(datasetID, powerbiapi.UpdateRefreshScheduleRequest{
+		err := client.UpdateRefreshScheduleInGroup(groupID, datasetID, powerbiapi.UpdateRefreshScheduleRequest{
 			Value: requestVal,
 		})
 		if err != nil {
@@ -257,7 +270,7 @@ func updateRefreshSchedule(d *schema.ResourceData, meta interface{}) error {
 
 	// disabling has to be in a seperate step as api does not allow updates and disable in same request
 	if disableRequired {
-		err := client.UpdateRefreshSchedule(datasetID, powerbiapi.UpdateRefreshScheduleRequest{
+		err := client.UpdateRefreshScheduleInGroup(groupID, datasetID, powerbiapi.UpdateRefreshScheduleRequest{
 			Value: powerbiapi.UpdateRefreshScheduleRequestValue{Enabled: convertBoolToPointer(false)},
 		})
 		if err != nil {
@@ -276,7 +289,12 @@ func deleteRefreshSchedule(d *schema.ResourceData, meta interface{}) error {
 	if err != nil {
 		return err
 	}
-	return client.UpdateRefreshSchedule(datasetID, powerbiapi.UpdateRefreshScheduleRequest{
+
+	groupID, err := getGroupID(d, meta)
+	if err != nil {
+		return err
+	}
+	return client.UpdateRefreshScheduleInGroup(groupID, datasetID, powerbiapi.UpdateRefreshScheduleRequest{
 		Value: powerbiapi.UpdateRefreshScheduleRequestValue{
 			Enabled: convertBoolToPointer(false),
 		},

@@ -22,6 +22,11 @@ func ResourceWorkspace() *schema.Resource {
 				Required:    true,
 				Description: "Name of the workspace.",
 			},
+			"capacity_id": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "Capacity ID, which will be assigned to workspace.",
+			},
 		},
 	}
 }
@@ -36,6 +41,15 @@ func createWorkspace(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	d.SetId(resp.ID)
+
+	if d.Get("capacity_id").(string) != "" {
+		err := client.GroupAssignToCapacity(d.Id(), powerbiapi.GroupAssignToCapacityRequest{
+			CapacityID: d.Get("capacity_id").(string),
+		})
+		if err != nil {
+			return err
+		}
+	}
 
 	return readWorkspace(d, meta)
 }
@@ -53,6 +67,7 @@ func readWorkspace(d *schema.ResourceData, meta interface{}) error {
 	} else {
 		d.SetId(workspace.ID)
 		d.Set("name", workspace.Name)
+		d.Set("capacity_id", workspace.CapacityID)
 	}
 
 	return nil
@@ -61,11 +76,25 @@ func readWorkspace(d *schema.ResourceData, meta interface{}) error {
 func updateWorkspace(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*powerbiapi.Client)
 
-	err := client.UpdateGroupAsAdmin(d.Id(), powerbiapi.UpdateGroupAsAdminRequest{
-		Name: d.Get("name").(string),
-	})
+	existingWorkspace, err := client.GetGroup(d.Id())
 	if err != nil {
 		return err
+	}
+
+	if existingWorkspace.Name != d.Get("name").(string) {
+		err := client.UpdateGroupAsAdmin(d.Id(), powerbiapi.UpdateGroupAsAdminRequest{
+			Name: d.Get("name").(string),
+		})
+		if err != nil {
+			return err
+		}
+	} else {
+		err := client.GroupAssignToCapacity(d.Id(), powerbiapi.GroupAssignToCapacityRequest{
+			CapacityID: d.Get("capacity_id").(string),
+		})
+		if err != nil {
+			return err
+		}
 	}
 
 	return readWorkspace(d, meta)

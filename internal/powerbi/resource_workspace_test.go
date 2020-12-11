@@ -31,19 +31,19 @@ func TestAccWorkspace_basic(t *testing.T) {
 					resource.TestCheckResourceAttr("powerbi_workspace.test", "name", fmt.Sprintf("Acceptance Test Workspace %s", workspaceSuffix)),
 				),
 			},
-			// second step updates it with a new title
-			{
-				Config: fmt.Sprintf(`
-				resource "powerbi_workspace" "test" {
-					name = "Acceptance Test Workspace %s - Updated"
-				}
-				`, workspaceSuffix),
-				Check: resource.ComposeTestCheckFunc(
-					testCheckWorkspaceExistsWithName("powerbi_workspace.test", fmt.Sprintf("Acceptance Test Workspace %s - Updated", workspaceSuffix)),
-					resource.TestCheckResourceAttrSet("powerbi_workspace.test", "id"),
-					resource.TestCheckResourceAttr("powerbi_workspace.test", "name", fmt.Sprintf("Acceptance Test Workspace %s - Updated", workspaceSuffix)),
-				),
-			},
+			// second step Assigns capacity to workspace
+			// {
+			// 	Config: fmt.Sprintf(`
+			// 	resource "powerbi_workspace" "test" {
+			// 		name = "Acceptance Test Workspace %s - Updated"
+			// 	}
+			// 	`, workspaceSuffix),
+			// 	Check: resource.ComposeTestCheckFunc(
+			// 		testCheckWorkspaceExistsWithName("powerbi_workspace.test", fmt.Sprintf("Acceptance Test Workspace %s - Updated", workspaceSuffix)),
+			// 		resource.TestCheckResourceAttrSet("powerbi_workspace.test", "id"),
+			// 		resource.TestCheckResourceAttr("powerbi_workspace.test", "name", fmt.Sprintf("Acceptance Test Workspace %s - Updated", workspaceSuffix)),
+			// 	),
+			// },
 			// final step checks importing the current state we reached in the step above
 			{
 				ResourceName:      "powerbi_workspace.test",
