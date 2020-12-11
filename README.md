@@ -33,7 +33,7 @@ If using terraform 0.12 plugins must be installed locally
 
 Further details about installing terraform plugs can be found at https://www.terraform.io/docs/plugins/basics.html#installing-plugins
 
-## Usage Example
+## Usage Example 1 (Azure application without admin cencents and user without MFA)
 
 ```terraform
 # Configure the Power BI Provider
@@ -41,6 +41,7 @@ provider "powerbi" {
   tenant_id       = "..."
   client_id       = "..."
   client_secret   = "..."
+  grant_type      = "password"
   username        = "..."
   password        = "..."
 }
@@ -61,6 +62,22 @@ resource "powerbi_pbix" "example" {
 		url = "https://services.odata.org/V3/(S(kbiqo1qkby04vnobw0li0fcp))/OData/OData.svc"
 		original_url = "https://services.odata.org/V3/OData/OData.svc"
 	}
+}
+```
+## Usage Example 2 (Azure application with admin cencents without username)
+
+```terraform
+# Configure the Power BI Provider
+provider "powerbi" {
+  tenant_id       = "..."
+  client_id       = "..."
+  client_secret   = "..."
+  grant_type      = "client_credentials"
+}
+
+# Create a workspace
+resource "powerbi_workspace" "example" {
+  name     = "Example Workspace"
 }
 ```
 
@@ -102,6 +119,7 @@ The majority of tests in the provider are Acceptance Tests - which provisions re
 - `POWERBI_TENANT_ID`
 - `POWERBI_CLIENT_ID`
 - `POWERBI_CLIENT_SECRET`
+- `POWERBI_GRANT_TYPE`
 - `POWERBI_USERNAME`
 - `POWERBI_PASSWORD`
 
