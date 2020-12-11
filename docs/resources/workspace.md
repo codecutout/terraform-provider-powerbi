@@ -1,10 +1,18 @@
 # Workspace Resource
 `powerbi_workspace` represents a worksapce within Power BI (also called a Group)
 
-## Example Usage
+## Example Usage (without dedicated capacity)
 ```hcl
 resource "powerbi_workspace" "myworkspace" {
 	name = "Sample workspace"
+}
+```
+
+## Example Usage (with dedicated capacity)
+```hcl
+resource "powerbi_workspace" "myworkspace" {
+	name = "Sample workspace"
+	capacity_id = "0000-1111-1111-1111"
 }
 ```
 

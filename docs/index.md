@@ -9,6 +9,7 @@ provider "powerbi" {
 	tenant_id = "1c4cc30c-271e-47f2-891e-fef13f035bc7"
 	client_id = "f9ad3042-a969-4a31-826e-856d238df3b1"
 	client_secret = "u94lE93qfJSJRTEGs@Pgs]]RZzM]V?bE"
+	grant_type = "password"
 	username = "powerbiapp@mycompany.com"
 	password = "pass@word1!"
 }

@@ -5,7 +5,8 @@
 ## Example Usage
 ```hcl
 resource "powerbi_refresh_schedule" "test" {
-	dataset_id = "${powerbi_pbix.test.dataset_id}"
+	workspace_id = powerbi_workspace.test.id
+	dataset_id = powerbi_pbix.test.dataset_id
 	enabled = true
 	days = ["Monday", "Wednesday", "Friday"]
 	times = ["09:00", "17:30"]
