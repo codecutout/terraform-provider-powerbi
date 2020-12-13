@@ -134,6 +134,15 @@ func (client *Client) DeleteDataset(datasetID string) error {
 	return err
 }
 
+// DeleteDatasetInGroup deletes a dataset that exists within a group.
+func (client *Client) DeleteDatasetInGroup(groupID string, datasetID string) error {
+
+	url := fmt.Sprintf("https://api.powerbi.com/v1.0/myorg/groups/%s/datasets/%s", url.PathEscape(groupID), url.PathEscape(datasetID))
+	err := client.doJSON("DELETE", url, nil, nil)
+
+	return err
+}
+
 // GetParameters gets parameters in a dataset.
 func (client *Client) GetParameters(datasetID string) (*GetParametersResponse, error) {
 
@@ -144,10 +153,29 @@ func (client *Client) GetParameters(datasetID string) (*GetParametersResponse, e
 	return &respObj, err
 }
 
+// GetParametersInGroup gets parameters in a dataset that exists within a group.
+func (client *Client) GetParametersInGroup(groupID string, datasetID string) (*GetParametersResponse, error) {
+
+	var respObj GetParametersResponse
+	url := fmt.Sprintf("https://api.powerbi.com/v1.0/myorg/groups/%s/datasets/%s/parameters", url.PathEscape(groupID), url.PathEscape(datasetID))
+	err := client.doJSON("GET", url, nil, &respObj)
+
+	return &respObj, err
+}
+
 // UpdateParameters updates parameters in a dataset.
 func (client *Client) UpdateParameters(datasetID string, request UpdateParametersRequest) error {
 
 	url := fmt.Sprintf("https://api.powerbi.com/v1.0/myorg/datasets/%s/Default.UpdateParameters", url.PathEscape(datasetID))
+	err := client.doJSON("POST", url, &request, nil)
+
+	return err
+}
+
+// UpdateParametersInGroup updates parameters in a dataset that exists within a group.
+func (client *Client) UpdateParametersInGroup(groupID string, datasetID string, request UpdateParametersRequest) error {
+
+	url := fmt.Sprintf("https://api.powerbi.com/v1.0/myorg/groups/%s/datasets/%s/Default.UpdateParameters", url.PathEscape(groupID), url.PathEscape(datasetID))
 	err := client.doJSON("POST", url, &request, nil)
 
 	return err
@@ -163,10 +191,29 @@ func (client *Client) GetDatasources(datasetID string) (*GetDatasourcesResponse,
 	return &respObj, err
 }
 
+// GetDatasourcesInGroup gets datasources in a dataset that exists within a group.
+func (client *Client) GetDatasourcesInGroup(groupID string, datasetID string) (*GetDatasourcesResponse, error) {
+
+	var respObj GetDatasourcesResponse
+	url := fmt.Sprintf("https://api.powerbi.com/v1.0/myorg/groups/%s/datasets/%s/datasources", url.PathEscape(groupID), url.PathEscape(datasetID))
+	err := client.doJSON("GET", url, nil, &respObj)
+
+	return &respObj, err
+}
+
 // UpdateDatasources updates datasources in a dataset.
 func (client *Client) UpdateDatasources(datasetID string, request UpdateDatasourcesRequest) error {
 
 	url := fmt.Sprintf("https://api.powerbi.com/v1.0/myorg/datasets/%s/Default.UpdateDatasources", url.PathEscape(datasetID))
+	err := client.doJSON("POST", url, &request, nil)
+
+	return err
+}
+
+// UpdateDatasourcesInGroup updates datasources in a dataset that exists within a group.
+func (client *Client) UpdateDatasourcesInGroup(groupID string, datasetID string, request UpdateDatasourcesRequest) error {
+
+	url := fmt.Sprintf("https://api.powerbi.com/v1.0/myorg/groups/%s/datasets/%s/Default.UpdateDatasources", url.PathEscape(groupID), url.PathEscape(datasetID))
 	err := client.doJSON("POST", url, &request, nil)
 
 	return err

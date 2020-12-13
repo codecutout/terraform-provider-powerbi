@@ -228,15 +228,17 @@ func updatePBIX(d *schema.ResourceData, meta interface{}) error {
 func deletePBIX(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*powerbiapi.Client)
 
+	groupID := d.Get("workspace_id").(string)
+
 	if reportID := d.Get("report_id"); reportID != nil {
-		err := client.DeleteReport(reportID.(string))
+		err := client.DeleteReportInGroup(groupID, reportID.(string))
 		if err != nil {
 			return err
 		}
 	}
 
 	if datasetID := d.Get("dataset_id"); datasetID != nil {
-		err := client.DeleteDataset(datasetID.(string))
+		err := client.DeleteDatasetInGroup(groupID, datasetID.(string))
 		if err != nil {
 			return err
 		}
@@ -274,8 +276,9 @@ func createImport(d *schema.ResourceData, meta interface{}) error {
 func readImport(d *schema.ResourceData, meta interface{}, timeoutForSuccessfulImport time.Duration) error {
 	client := meta.(*powerbiapi.Client)
 	id := d.Id()
+	groupID := d.Get("workspace_id").(string)
 
-	im, err := client.WaitForImportToSucceed(id, timeoutForSuccessfulImport)
+	im, err := client.WaitForImportInGroupToSucceed(groupID, id, timeoutForSuccessfulImport)
 	if err != nil {
 		return err
 	}
@@ -301,6 +304,7 @@ func setPBIXParameters(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*powerbiapi.Client)
 	parameter := d.Get("parameter").(*schema.Set)
 	datasetID := d.Get("dataset_id").(string)
+	groupID := d.Get("workspace_id").(string)
 	if parameter != nil {
 		parameterList := parameter.List()
 		if len(parameterList) > 0 {
@@ -312,7 +316,7 @@ func setPBIXParameters(d *schema.ResourceData, meta interface{}) error {
 					NewValue: parameterObj["value"].(string),
 				})
 			}
-			err := client.UpdateParameters(datasetID, updateParameterRequest)
+			err := client.UpdateParametersInGroup(groupID, datasetID, updateParameterRequest)
 			if err != nil {
 				return err
 			}
@@ -329,9 +333,10 @@ func readPBIXParameters(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*powerbiapi.Client)
 
 	datasetID := d.Get("dataset_id").(string)
+	groupID := d.Get("workspace_id").(string)
 	stateParameters := d.Get("parameter").(*schema.Set)
 
-	apiParameters, err := client.GetParameters(datasetID)
+	apiParameters, err := client.GetParametersInGroup(groupID, datasetID)
 	if err != nil {
 		return err
 	}
@@ -355,6 +360,7 @@ func setPBIXDatasources(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*powerbiapi.Client)
 	datasources := d.Get("datasource").(*schema.Set)
 	datasetID := d.Get("dataset_id").(string)
+	groupID := d.Get("workspace_id").(string)
 
 	if datasources != nil {
 		datasourceList := datasources.List()
@@ -378,7 +384,7 @@ func setPBIXDatasources(d *schema.ResourceData, meta interface{}) error {
 					},
 				})
 			}
-			err := client.UpdateDatasources(datasetID, updateDatasourcesRequest)
+			err := client.UpdateDatasourcesInGroup(groupID, datasetID, updateDatasourcesRequest)
 			if err != nil {
 				return err
 			}
@@ -395,9 +401,10 @@ func readPBIXDatasources(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*powerbiapi.Client)
 
 	datasetID := d.Get("dataset_id").(string)
+	groupID := d.Get("workspace_id").(string)
 	stateDatasources := d.Get("datasource").(*schema.Set)
 
-	apiDatasources, err := client.GetDatasources(datasetID)
+	apiDatasources, err := client.GetDatasourcesInGroup(groupID, datasetID)
 	if err != nil {
 		return err
 	}

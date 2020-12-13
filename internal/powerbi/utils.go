@@ -47,6 +47,13 @@ func isHTTP404Error(err error) bool {
 	return false
 }
 
+func isHTTP401Error(err error) bool {
+	if httpErr, isHTTPErr := toHTTPUnsuccessfulError(err); isHTTPErr && httpErr.Response.StatusCode == 401 {
+		return true
+	}
+	return false
+}
+
 func toHTTPUnsuccessfulError(err error) (*powerbiapi.HTTPUnsuccessfulError, bool) {
 	if err == nil {
 		return nil, false
@@ -60,4 +67,13 @@ func toHTTPUnsuccessfulError(err error) (*powerbiapi.HTTPUnsuccessfulError, bool
 		return &httpErr, true
 	}
 	return nil, false
+}
+
+type wrappedError struct {
+	Err          error
+	ErrorMessage func(err error) string
+}
+
+func (e wrappedError) Error() string {
+	return e.ErrorMessage(e.Err)
 }

@@ -17,20 +17,37 @@ type Client struct {
 	*http.Client
 }
 
-//NewClient creates a Power BI REST API client
-func NewClient(tenant string, clientID string, clientSecret string, username string, password string) (*Client, error) {
+//NewClientWithPasswordAuth creates a Power BI REST API client using password authentication with delegated permissions
+func NewClientWithPasswordAuth(tenant string, clientID string, clientSecret string, username string, password string) (*Client, error) {
 
 	httpClient := cleanhttp.DefaultClient()
 
 	// add default header for all future requests
 	httpClient.Transport = roundTripperBearerToken{
 		innerRoundTripper: roundTripperErrorOnUnsuccessful{httpClient.Transport},
-		tenant:            tenant,
-		clientID:          clientID,
-		clientSecret:      clientSecret,
-		username:          username,
-		password:          password,
 		tokenCache:        &roundTripperBearerTokenCache{},
+		getToken: func(httpClient *http.Client) (string, error) {
+			return getAuthTokenWithPassword(httpClient, tenant, clientID, clientSecret, username, password)
+		},
+	}
+
+	return &Client{
+		httpClient,
+	}, nil
+}
+
+//NewClientWithClientCredentialAuth creates a Power BI REST API client using client credentials with application permissions
+func NewClientWithClientCredentialAuth(tenant string, clientID string, clientSecret string) (*Client, error) {
+
+	httpClient := cleanhttp.DefaultClient()
+
+	// add default header for all future requests
+	httpClient.Transport = roundTripperBearerToken{
+		innerRoundTripper: roundTripperErrorOnUnsuccessful{httpClient.Transport},
+		tokenCache:        &roundTripperBearerTokenCache{},
+		getToken: func(httpClient *http.Client) (string, error) {
+			return getAuthTokenWithClientCredentials(httpClient, tenant, clientID, clientSecret)
+		},
 	}
 
 	return &Client{

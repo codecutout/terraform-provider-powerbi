@@ -1,6 +1,8 @@
 package powerbi
 
 import (
+	"fmt"
+
 	"github.com/codecutout/terraform-provider-powerbi/internal/powerbiapi"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 )
@@ -65,6 +67,21 @@ func updateWorkspace(d *schema.ResourceData, meta interface{}) error {
 		Name: d.Get("name").(string),
 	})
 	if err != nil {
+		if isHTTP401Error(err) {
+			return wrappedError{
+				Err: err,
+				ErrorMessage: func(err error) string {
+					return fmt.Sprintf(`%s 
+				
+Power BI tenant administrator permissions are required to rename a workspace via the API. Administrator operations are not currently supported when using client credential authentication.
+
+If unable to be granted tenant administrator permissions then following workarounds are recommended: 
+* rename the workspace via the web portal prior to terraform planning. Updates via the web portal only require workspace administrator permissions
+* create a new workspace with the desired name and delete the old workspace
+`, err)
+				},
+			}
+		}
 		return err
 	}
 

@@ -29,10 +29,19 @@ func (client *Client) GetReportsInGroup(groupID string) (*GetReportsInGroupRespo
 	return &respObj, err
 }
 
-// DeleteReport deletes a dataset.
+// DeleteReport deletes a report.
 func (client *Client) DeleteReport(reportID string) error {
 
 	url := fmt.Sprintf("https://api.powerbi.com/v1.0/myorg/reports/%s", url.PathEscape(reportID))
+	err := client.doJSON("DELETE", url, nil, nil)
+
+	return err
+}
+
+// DeleteReportInGroup deletes a report that exists within a group.
+func (client *Client) DeleteReportInGroup(groupID string, reportID string) error {
+
+	url := fmt.Sprintf("https://api.powerbi.com/v1.0/myorg/groups/%s/reports/%s", url.PathEscape(groupID), url.PathEscape(reportID))
 	err := client.doJSON("DELETE", url, nil, nil)
 
 	return err

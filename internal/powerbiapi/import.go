@@ -122,14 +122,14 @@ func (client *Client) PostImportInGroup(groupID string, datasetDisplayName strin
 	return &respObj, err
 }
 
-// WaitForImportToSucceed waits until the specified import
-func (client *Client) WaitForImportToSucceed(importID string, timeout time.Duration) (*GetImportResponse, error) {
+// WaitForImportInGroupToSucceed waits until the specified import in group succeeds
+func (client *Client) WaitForImportInGroupToSucceed(groupID string, importID string, timeout time.Duration) (*GetImportInGroupResponse, error) {
 	ticker := time.NewTicker(time.Second)
 	defer ticker.Stop()
 
 	started := time.Now()
 	for {
-		im, err := client.GetImport(importID)
+		im, err := client.GetImportInGroup(groupID, importID)
 		if err != nil {
 			return nil, err
 		}

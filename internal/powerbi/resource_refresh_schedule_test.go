@@ -195,6 +195,7 @@ func TestAccRefreshSchedule_validation(t *testing.T) {
 
 func TestAccRefreshSchedule_skew(t *testing.T) {
 	var datasetID string
+	var groupID string
 	workspaceSuffix := acctest.RandString(6)
 
 	config := fmt.Sprintf(`
@@ -230,6 +231,7 @@ func TestAccRefreshSchedule_skew(t *testing.T) {
 				Config: config,
 				Check: resource.ComposeTestCheckFunc(
 					set("powerbi_refresh_schedule.test", "dataset_id", &datasetID),
+					set("powerbi_refresh_schedule.test", "worksapce_id", &groupID),
 				),
 			},
 			// second step skew the resource and checks it gets reupdates it
@@ -257,7 +259,7 @@ func TestAccRefreshSchedule_skew(t *testing.T) {
 			{
 				PreConfig: func() {
 					client := testAccProvider.Meta().(*powerbiapi.Client)
-					client.DeleteDataset(datasetID)
+					client.DeleteDatasetInGroup(groupID, datasetID)
 				},
 				Config: config,
 				Check: resource.ComposeTestCheckFunc(
@@ -276,7 +278,7 @@ func TestAccRefreshSchedule_skew(t *testing.T) {
 
 func testCheckRefreshSchedule(scheduleRefreshResourceName string, expectedRefreshSchedule powerbiapi.GetRefreshScheduleResponse) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		refreshScheduleID, err := getID(s, scheduleRefreshResourceName)
+		refreshScheduleID, err := getResourceID(s, scheduleRefreshResourceName)
 		if err != nil {
 			return err
 		}
