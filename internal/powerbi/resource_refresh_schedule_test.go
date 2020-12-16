@@ -202,8 +202,8 @@ func TestAccRefreshSchedule_validation(t *testing.T) {
 
 func TestAccRefreshSchedule_skew(t *testing.T) {
 	var datasetID string
-	workspaceSuffix := acctest.RandString(6)
 	var groupID string
+	workspaceSuffix := acctest.RandString(6)
 
 	config := fmt.Sprintf(`
 	resource "powerbi_workspace" "test" {
@@ -238,6 +238,7 @@ func TestAccRefreshSchedule_skew(t *testing.T) {
 			{
 				Config: config,
 				Check: resource.ComposeTestCheckFunc(
+					set("powerbi_workspace.test", "id", &groupID),
 					set("powerbi_refresh_schedule.test", "dataset_id", &datasetID),
 				),
 			},
@@ -245,7 +246,6 @@ func TestAccRefreshSchedule_skew(t *testing.T) {
 			{
 				PreConfig: func() {
 					client := testAccProvider.Meta().(*powerbiapi.Client)
-
 					client.UpdateRefreshScheduleInGroup(groupID, datasetID, powerbiapi.UpdateRefreshScheduleRequest{
 						Value: powerbiapi.UpdateRefreshScheduleRequestValue{
 							LocalTimeZoneID: convertStringToPointer("UTC"),
@@ -267,8 +267,6 @@ func TestAccRefreshSchedule_skew(t *testing.T) {
 			{
 				PreConfig: func() {
 					client := testAccProvider.Meta().(*powerbiapi.Client)
-					groups, _ := client.GetGroups(fmt.Sprintf("name eq 'Acceptance Test Workspace %s'", workspaceSuffix), -1, 0)
-					groupID = groups.Value[0].ID
 					client.DeleteDatasetInGroup(groupID, datasetID)
 				},
 				Config: config,
