@@ -92,8 +92,8 @@ type UpdateDatasourcesInGroupRequestItemConnectionDetails struct {
 	URL      *string
 }
 
-// GetRefreshScheduleResponse represents the response to getting a refresh schedule
-type GetRefreshScheduleResponse struct {
+// GetRefreshScheduleInGroupResponse represents the response to getting a refresh schedule
+type GetRefreshScheduleInGroupResponse struct {
 	Enabled         bool
 	Days            []string
 	Times           []string
@@ -101,13 +101,13 @@ type GetRefreshScheduleResponse struct {
 	NotifyOption    string
 }
 
-// UpdateRefreshScheduleRequest represents the request to update refresh schedules
-type UpdateRefreshScheduleRequest struct {
-	Value UpdateRefreshScheduleRequestValue `json:"value"`
+// UpdateRefreshScheduleInGroupRequest represents the request to update refresh schedules
+type UpdateRefreshScheduleInGroupRequest struct {
+	Value UpdateRefreshScheduleInGroupRequestValue `json:"value"`
 }
 
-// UpdateRefreshScheduleRequestValue represents the value section in the request tot update refresh schedules
-type UpdateRefreshScheduleRequestValue struct {
+// UpdateRefreshScheduleInGroupRequestValue represents the value section in the request tot update refresh schedules
+type UpdateRefreshScheduleInGroupRequestValue struct {
 	Enabled         *bool     `json:"enabled,omitempty"`
 	Days            *[]string `json:"days,omitempty"`
 	Times           *[]string `json:"times,omitempty"`
@@ -172,20 +172,20 @@ func (client *Client) UpdateDatasourcesInGroup(groupID string, datasetID string,
 	return err
 }
 
-// GetRefreshSchedule gets a datasource's refresh schedule.
-func (client *Client) GetRefreshSchedule(datasetID string) (*GetRefreshScheduleResponse, error) {
+// GetRefreshScheduleInGroup gets a datasource's refresh schedule.
+func (client *Client) GetRefreshScheduleInGroup(groupID string, datasetID string) (*GetRefreshScheduleInGroupResponse, error) {
 
-	var respObj GetRefreshScheduleResponse
-	url := fmt.Sprintf("https://api.powerbi.com/v1.0/myorg/datasets/%s/refreshSchedule", url.PathEscape(datasetID))
+	var respObj GetRefreshScheduleInGroupResponse
+	url := fmt.Sprintf("https://api.powerbi.com/v1.0/myorg/groups/%s/datasets/%s/refreshSchedule", url.PathEscape(groupID), url.PathEscape(datasetID))
 	err := client.doJSON("GET", url, nil, &respObj)
 
 	return &respObj, err
 }
 
-// UpdateRefreshSchedule updates a datasource's refresh schedule.
-func (client *Client) UpdateRefreshSchedule(datasetID string, request UpdateRefreshScheduleRequest) error {
+// UpdateRefreshScheduleInGroup updates a datasource's refresh schedule.
+func (client *Client) UpdateRefreshScheduleInGroup(groupID string, datasetID string, request UpdateRefreshScheduleInGroupRequest) error {
 
-	url := fmt.Sprintf("https://api.powerbi.com/v1.0/myorg/datasets/%s/refreshSchedule", url.PathEscape(datasetID))
+	url := fmt.Sprintf("https://api.powerbi.com/v1.0/myorg/groups/%s/datasets/%s/refreshSchedule", url.PathEscape(groupID), url.PathEscape(datasetID))
 	err := client.doJSON("PATCH", url, &request, nil)
 
 	return err

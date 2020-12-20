@@ -45,7 +45,7 @@ jobs:
 
   # run acceptance tests in a matrix with Terraform core versions
   test:
-    name: Acceptance Test - terraform v${{matrix.terraform}} - ${{matrix.authsecrets.name}}
+    name: Acceptance Tests - terraform v${{matrix.terraform}} - auth with ${{matrix.authsecrets.name}}
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 15
