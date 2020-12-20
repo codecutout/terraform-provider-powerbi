@@ -308,10 +308,10 @@ func setPBIXParameters(d *schema.ResourceData, meta interface{}) error {
 	if parameter != nil {
 		parameterList := parameter.List()
 		if len(parameterList) > 0 {
-			updateParameterRequest := powerbiapi.UpdateParametersRequest{}
+			updateParameterRequest := powerbiapi.UpdateParametersInGroupRequest{}
 			for _, parameterObj := range parameterList {
 				parameterObj := parameterObj.(map[string]interface{})
-				updateParameterRequest.UpdateDetails = append(updateParameterRequest.UpdateDetails, powerbiapi.UpdateParametersRequestItem{
+				updateParameterRequest.UpdateDetails = append(updateParameterRequest.UpdateDetails, powerbiapi.UpdateParametersInGroupRequestItem{
 					Name:     parameterObj["name"].(string),
 					NewValue: parameterObj["value"].(string),
 				})
@@ -365,18 +365,18 @@ func setPBIXDatasources(d *schema.ResourceData, meta interface{}) error {
 	if datasources != nil {
 		datasourceList := datasources.List()
 		if len(datasourceList) > 0 {
-			updateDatasourcesRequest := powerbiapi.UpdateDatasourcesRequest{}
+			updateDatasourcesRequest := powerbiapi.UpdateDatasourcesInGroupRequest{}
 			for _, datasourceObj := range datasourceList {
 				datasourceObj := datasourceObj.(map[string]interface{})
-				updateDatasourcesRequest.UpdateDetails = append(updateDatasourcesRequest.UpdateDetails, powerbiapi.UpdateDatasourcesRequestItem{
-					ConnectionDetails: powerbiapi.UpdateDatasourcesRequestItemConnectionDetails{
+				updateDatasourcesRequest.UpdateDetails = append(updateDatasourcesRequest.UpdateDetails, powerbiapi.UpdateDatasourcesInGroupRequestItem{
+					ConnectionDetails: powerbiapi.UpdateDatasourcesInGroupRequestItemConnectionDetails{
 						URL:      emptyStringToNil(datasourceObj["url"].(string)),
 						Database: emptyStringToNil(datasourceObj["database"].(string)),
 						Server:   emptyStringToNil(datasourceObj["server"].(string)),
 					},
-					DatasourceSelector: powerbiapi.UpdateDatasourcesRequestItemDatasourceSelector{
+					DatasourceSelector: powerbiapi.UpdateDatasourcesInGroupRequestItemDatasourceSelector{
 						DatasourceType: datasourceObj["type"].(string),
-						ConnectionDetails: powerbiapi.UpdateDatasourcesRequestItemConnectionDetails{
+						ConnectionDetails: powerbiapi.UpdateDatasourcesInGroupRequestItemConnectionDetails{
 							URL:      emptyStringToNil(datasourceObj["original_url"].(string)),
 							Database: emptyStringToNil(datasourceObj["original_database"].(string)),
 							Server:   emptyStringToNil(datasourceObj["original_server"].(string)),

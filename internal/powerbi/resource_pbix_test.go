@@ -140,8 +140,8 @@ func TestAccPBIX_parameters(t *testing.T) {
 				PreConfig: func() {
 					//update paramter outside of terraform to simulate drift
 					client := testAccProvider.Meta().(*powerbiapi.Client)
-					client.UpdateParametersInGroup(groupID, datasetID, powerbiapi.UpdateParametersRequest{
-						UpdateDetails: []powerbiapi.UpdateParametersRequestItem{
+					client.UpdateParametersInGroup(groupID, datasetID, powerbiapi.UpdateParametersInGroupRequest{
+						UpdateDetails: []powerbiapi.UpdateParametersInGroupRequestItem{
 							{
 								Name:     "ParamOne",
 								NewValue: "DriftedValue",
@@ -245,15 +245,15 @@ func TestAccPBIX_datasources(t *testing.T) {
 				PreConfig: func() {
 					//update datasource outside of terraform to simulate drift
 					client := testAccProvider.Meta().(*powerbiapi.Client)
-					client.UpdateDatasourcesInGroup(groupID, datasetID, powerbiapi.UpdateDatasourcesRequest{
-						UpdateDetails: []powerbiapi.UpdateDatasourcesRequestItem{
+					client.UpdateDatasourcesInGroup(groupID, datasetID, powerbiapi.UpdateDatasourcesInGroupRequest{
+						UpdateDetails: []powerbiapi.UpdateDatasourcesInGroupRequestItem{
 							{
-								ConnectionDetails: powerbiapi.UpdateDatasourcesRequestItemConnectionDetails{
+								ConnectionDetails: powerbiapi.UpdateDatasourcesInGroupRequestItemConnectionDetails{
 									URL: emptyStringToNil("https://google.com"),
 								},
-								DatasourceSelector: powerbiapi.UpdateDatasourcesRequestItemDatasourceSelector{
+								DatasourceSelector: powerbiapi.UpdateDatasourcesInGroupRequestItemDatasourceSelector{
 									DatasourceType: "OData",
-									ConnectionDetails: powerbiapi.UpdateDatasourcesRequestItemConnectionDetails{
+									ConnectionDetails: powerbiapi.UpdateDatasourcesInGroupRequestItemConnectionDetails{
 										URL: emptyStringToNil("https://services.odata.org/V3/(S(kbiqo1qkby04vnobw0li0fcp))/OData/OData.svc"),
 									},
 								},
