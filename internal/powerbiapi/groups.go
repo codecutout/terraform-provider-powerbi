@@ -16,6 +16,7 @@ type CreateGroupResponse struct {
 	ID                    string
 	IsOnDedicatedCapacity bool
 	Name                  string
+	CapacityID            string
 }
 
 // GetGroupsResponse represents the response from the GetGroups API
@@ -28,6 +29,7 @@ type GetGroupsResponseItem struct {
 	ID                    string
 	IsOnDedicatedCapacity bool
 	Name                  string
+	CapacityID            string
 }
 
 // GetGroupResponse represents the details when getting an individual group
@@ -35,6 +37,7 @@ type GetGroupResponse struct {
 	ID                    string
 	IsOnDedicatedCapacity bool
 	Name                  string
+	CapacityID            string
 }
 
 //GetGroupUsersResponse represents list of users that have access to the specified workspace.
@@ -117,6 +120,7 @@ func (client *Client) GetGroup(groupID string) (*GetGroupResponse, error) {
 		ID:                    singleGroup.ID,
 		IsOnDedicatedCapacity: singleGroup.IsOnDedicatedCapacity,
 		Name:                  singleGroup.Name,
+		CapacityID:            singleGroup.CapacityID,
 	}, nil
 }
 

@@ -14,6 +14,7 @@ resource "powerbi_workspace" "myworkspace" {
 #### The following arguments are supported:
 <!-- docgen:NonComputedParameters -->
 * `name` - (Required, Forces new resource) Name of the workspace.
+* `capacity_id` - (Optional) Capacity ID to be assigned to workspace.
 <!-- /docgen -->
 
 ## Attributes Reference
