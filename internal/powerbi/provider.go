@@ -47,6 +47,7 @@ func Provider() *schema.Provider {
 			"powerbi_workspace":        ResourceWorkspace(),
 			"powerbi_pbix":             ResourcePBIX(),
 			"powerbi_refresh_schedule": ResourceRefreshSchedule(),
+			"powerbi_workspace_access": ResourceGroupUsers(),
 		},
 
 		ConfigureFunc: providerConfigure,

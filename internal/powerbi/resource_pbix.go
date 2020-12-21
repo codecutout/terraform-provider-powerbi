@@ -416,9 +416,9 @@ func readPBIXDatasources(d *schema.ResourceData, meta interface{}) error {
 		stateDatasourceObj := stateDatasource.(map[string]interface{})
 		anyAPIMatchesState := false
 		for _, apiDatasource := range apiDatasources.Value {
-			apiMatchesState := (stateDatasourceObj["url"] == "" || stateDatasourceObj["url"] == *apiDatasource.ConnectionDetails.URL) &&
-				(stateDatasourceObj["server"] == "" || stateDatasourceObj["server"] == *apiDatasource.ConnectionDetails.Server) &&
-				(stateDatasourceObj["database"] == "" || stateDatasourceObj["database"] == *apiDatasource.ConnectionDetails.Database)
+			apiMatchesState := (stateDatasourceObj["url"] == "" || stateDatasourceObj["url"] == *apiDatasource.ConnectionDetails.URL) ||
+				((stateDatasourceObj["server"] == "" || stateDatasourceObj["server"] == *apiDatasource.ConnectionDetails.Server) &&
+					(stateDatasourceObj["database"] == "" || stateDatasourceObj["database"] == *apiDatasource.ConnectionDetails.Database))
 			anyAPIMatchesState = anyAPIMatchesState || apiMatchesState
 		}
 

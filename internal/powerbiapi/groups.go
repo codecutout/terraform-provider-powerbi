@@ -88,6 +88,29 @@ func (client *Client) GetGroup(groupID string) (*GetGroupResponse, error) {
 	}, nil
 }
 
+// GetGroupbyName returns a single workspace
+func (client *Client) GetGroupbyName(groupName string) (*GetGroupResponse, error) {
+
+	// There is no endpoint to get a single workspace, so we will search for
+	// all workspaces with a specific name
+	groups, err := client.GetGroups(fmt.Sprintf("name eq '%s'", groupName), -1, 0)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if len(groups.Value) == 0 {
+		return nil, nil
+	}
+
+	singleGroup := &groups.Value[0]
+	return &GetGroupResponse{
+		ID:                    singleGroup.ID,
+		IsOnDedicatedCapacity: singleGroup.IsOnDedicatedCapacity,
+		Name:                  singleGroup.Name,
+	}, nil
+}
+
 // DeleteGroup deletes a workspace
 func (client *Client) DeleteGroup(groupID string) error {
 	url := fmt.Sprintf("https://api.powerbi.com/v1.0/myorg/groups/%s", url.PathEscape(groupID))
