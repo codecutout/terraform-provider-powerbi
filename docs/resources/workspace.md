@@ -13,7 +13,7 @@ resource "powerbi_workspace" "myworkspace" {
 ## Argument Reference
 The following arguments are supported:
 <!-- docgen:NonComputedParameters -->
-* `name` - (Required) Name of the workspace.
+* `name` - (Required, Forces new resource) Name of the workspace.
 <!-- /docgen -->
 
 ## Attributes Reference

@@ -24,7 +24,7 @@ func ResourceGroupUsers() *schema.Resource {
 		Schema: map[string]*schema.Schema{
 			"workspace_id": {
 				Type:        schema.TypeString,
-				Description: "Workspace ID in which the PBIX will be added.",
+				Description: "Workspace ID to which user access would be given.",
 				Required:    true,
 				ForceNew:    true,
 			},
