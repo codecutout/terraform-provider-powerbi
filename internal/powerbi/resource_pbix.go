@@ -57,7 +57,7 @@ func ResourcePBIX() *schema.Resource {
 			},
 			"parameter": {
 				Type:        schema.TypeSet,
-				Description: "Parameters to be configured on the PBIX dataset. These can be updated wihtout requiring reuploading the PBIX. Any parameters not mentioned will not be tracked or updated",
+				Description: "Parameters to be configured on the PBIX dataset. These can be updated without requiring reuploading the PBIX. Any parameters not mentioned will not be tracked or updated",
 				Optional:    true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
