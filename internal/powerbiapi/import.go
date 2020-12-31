@@ -12,35 +12,6 @@ type PostImportInGroupResponse struct {
 	ID string
 }
 
-// GetImportResponse represents the response from getting an import
-type GetImportResponse struct {
-	ID              string
-	ImportState     string
-	CreatedDateTime time.Time
-	UpdatedDateTime time.Time
-	Name            string
-	ConnectionType  string
-	Source          string
-	Datasets        []GetImportResponseDataset
-	Reports         []GetImportResponseReport
-}
-
-// GetImportResponseDataset represents the dataset from the response when getting an import
-type GetImportResponseDataset struct {
-	ID                string
-	Name              string
-	WebURL            string
-	TargetStorageMode string
-}
-
-// GetImportResponseReport represents the report from the response when getting an import
-type GetImportResponseReport struct {
-	ID         string
-	ReportType string
-	Name       string
-	WebURL     string
-}
-
 // GetImportInGroupResponse represents the response from getting an import in a group
 type GetImportInGroupResponse struct {
 	ID              string
@@ -122,14 +93,14 @@ func (client *Client) PostImportInGroup(groupID string, datasetDisplayName strin
 	return &respObj, err
 }
 
-// WaitForImportToSucceed waits until the specified import
-func (client *Client) WaitForImportToSucceed(importID string, timeout time.Duration) (*GetImportResponse, error) {
+// WaitForImportInGroupToSucceed waits until the specified import in group succeeds
+func (client *Client) WaitForImportInGroupToSucceed(groupID string, importID string, timeout time.Duration) (*GetImportInGroupResponse, error) {
 	ticker := time.NewTicker(time.Second)
 	defer ticker.Stop()
 
 	started := time.Now()
 	for {
-		im, err := client.GetImport(importID)
+		im, err := client.GetImportInGroup(groupID, importID)
 		if err != nil {
 			return nil, err
 		}
@@ -167,18 +138,6 @@ func (client *Client) GetImportsInGroup(groupID string) (*GetImportsInGroupRespo
 	url := fmt.Sprintf(
 		"https://api.powerbi.com/v1.0/myorg/groups/%s/imports",
 		url.PathEscape(groupID))
-	err := client.doJSON("GET", url, nil, &respObj)
-
-	return &respObj, err
-}
-
-// GetImport returns the import details
-func (client *Client) GetImport(importID string) (*GetImportResponse, error) {
-
-	var respObj GetImportResponse
-	url := fmt.Sprintf(
-		"https://api.powerbi.com/v1.0/myorg/imports/%s",
-		url.PathEscape(importID))
 	err := client.doJSON("GET", url, nil, &respObj)
 
 	return &respObj, err

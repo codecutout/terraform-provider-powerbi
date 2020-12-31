@@ -36,11 +36,12 @@ func TestAccRefreshSchedule_basic(t *testing.T) {
 
 				resource "powerbi_refresh_schedule" "test" {
 					dataset_id = "${powerbi_pbix.test.dataset_id}"
+					workspace_id = "${powerbi_pbix.test.workspace_id}"
 					enabled = true
 					days = ["Monday", "Wednesday", "Friday"]
 					times = ["09:00", "17:30"]
 					local_time_zone_id = "Pacific Standard Time"
-					notify_option = "MailOnFailure"
+					notify_option = "NoNotification"
 				}
 
 				`, workspaceSuffix),
@@ -52,13 +53,13 @@ func TestAccRefreshSchedule_basic(t *testing.T) {
 					resource.TestCheckResourceAttr("powerbi_refresh_schedule.test", "times.0", "09:00"),
 					resource.TestCheckResourceAttr("powerbi_refresh_schedule.test", "times.1", "17:30"),
 					resource.TestCheckResourceAttr("powerbi_refresh_schedule.test", "local_time_zone_id", "Pacific Standard Time"),
-					resource.TestCheckResourceAttr("powerbi_refresh_schedule.test", "notify_option", "MailOnFailure"),
-					testCheckRefreshSchedule("powerbi_refresh_schedule.test", powerbiapi.GetRefreshScheduleResponse{
+					resource.TestCheckResourceAttr("powerbi_refresh_schedule.test", "notify_option", "NoNotification"),
+					testCheckRefreshSchedule("powerbi_refresh_schedule.test", powerbiapi.GetRefreshScheduleInGroupResponse{
 						Enabled:         true,
 						Days:            []string{"Monday", "Wednesday", "Friday"},
 						Times:           []string{"09:00", "17:30"},
 						LocalTimeZoneID: "Pacific Standard Time",
-						NotifyOption:    "MailOnFailure",
+						NotifyOption:    "NoNotification",
 					}),
 				),
 			},
@@ -78,20 +79,21 @@ func TestAccRefreshSchedule_basic(t *testing.T) {
 
 				resource "powerbi_refresh_schedule" "test" {
 					dataset_id = "${powerbi_pbix.test.dataset_id}"
+					workspace_id = "${powerbi_pbix.test.workspace_id}"
 					enabled = true
 					days = ["Tuesday", "Thursday"] # days changed
 					times = ["09:00", "17:30"]
 					local_time_zone_id = "UTC" # time zone changed
-					notify_option = "MailOnFailure"
+					notify_option = "NoNotification"
 				}
 				`, workspaceSuffix),
 				Check: resource.ComposeTestCheckFunc(
-					testCheckRefreshSchedule("powerbi_refresh_schedule.test", powerbiapi.GetRefreshScheduleResponse{
+					testCheckRefreshSchedule("powerbi_refresh_schedule.test", powerbiapi.GetRefreshScheduleInGroupResponse{
 						Enabled:         true,
 						Days:            []string{"Tuesday", "Thursday"},
 						Times:           []string{"09:00", "17:30"},
 						LocalTimeZoneID: "UTC",
-						NotifyOption:    "MailOnFailure",
+						NotifyOption:    "NoNotification",
 					}),
 				),
 			},
@@ -111,28 +113,23 @@ func TestAccRefreshSchedule_basic(t *testing.T) {
 
 				resource "powerbi_refresh_schedule" "test" {
 					dataset_id = "${powerbi_pbix.test.dataset_id}"
+					workspace_id = "${powerbi_pbix.test.workspace_id}"
 					enabled = false # enabled changed
-					days = ["Tuesday", "Thursday"] 
+					days = ["Tuesday", "Friday"] # days changed 
 					times = ["09:00"] # times changed
 					local_time_zone_id = "UTC"
-					notify_option = "NoNotification" # notify option changed
+					notify_option = "NoNotification"
 				}
 				`, workspaceSuffix),
 				Check: resource.ComposeTestCheckFunc(
-					testCheckRefreshSchedule("powerbi_refresh_schedule.test", powerbiapi.GetRefreshScheduleResponse{
+					testCheckRefreshSchedule("powerbi_refresh_schedule.test", powerbiapi.GetRefreshScheduleInGroupResponse{
 						Enabled:         false,
-						Days:            []string{"Tuesday", "Thursday"},
+						Days:            []string{"Tuesday", "Friday"},
 						Times:           []string{"09:00"},
 						LocalTimeZoneID: "UTC",
 						NotifyOption:    "NoNotification",
 					}),
 				),
-			},
-			// final step checks importing the current state we reached in the step above
-			{
-				ResourceName:      "powerbi_refresh_schedule.test",
-				ImportState:       true,
-				ImportStateVerify: true,
 			},
 		},
 	})
@@ -148,6 +145,7 @@ func TestAccRefreshSchedule_validation(t *testing.T) {
 				Config: `
 				resource "powerbi_refresh_schedule" "test" {
 					dataset_id = "validation-should-fail-before-using-this"
+					workspace_id = "validation-should-fail-before-using-this"
 					times = []
 					days = []
 					notify_option = "not-an-option"
@@ -160,6 +158,7 @@ func TestAccRefreshSchedule_validation(t *testing.T) {
 				Config: `
 				resource "powerbi_refresh_schedule" "test" {
 					dataset_id = "validation-should-fail-before-using-this"
+					workspace_id = "validation-should-fail-before-using-this"
 					times = []
 					days = ["Monday", "Badday", "Wednesday"]
 				}
@@ -171,6 +170,7 @@ func TestAccRefreshSchedule_validation(t *testing.T) {
 				Config: `
 				resource "powerbi_refresh_schedule" "test" {
 					dataset_id = "validation-should-fail-before-using-this"
+					workspace_id = "validation-should-fail-before-using-this"
 					times = ["9:30"]
 					days = []
 				}
@@ -182,6 +182,7 @@ func TestAccRefreshSchedule_validation(t *testing.T) {
 				Config: `
 				resource "powerbi_refresh_schedule" "test" {
 					dataset_id = "validation-should-fail-before-using-this"
+					workspace_id = "validation-should-fail-before-using-this"
 					times = ["09:45"]
 					days = []
 				}
@@ -195,6 +196,7 @@ func TestAccRefreshSchedule_validation(t *testing.T) {
 
 func TestAccRefreshSchedule_skew(t *testing.T) {
 	var datasetID string
+	var groupID string
 	workspaceSuffix := acctest.RandString(6)
 
 	config := fmt.Sprintf(`
@@ -211,11 +213,12 @@ func TestAccRefreshSchedule_skew(t *testing.T) {
 
 	resource "powerbi_refresh_schedule" "test" {
 		dataset_id = "${powerbi_pbix.test.dataset_id}"
+		workspace_id = "${powerbi_pbix.test.workspace_id}"
 		enabled = false
 		days = ["Monday", "Wednesday", "Friday"]
 		times = ["09:00", "17:30"]
 		local_time_zone_id = "Pacific Standard Time"
-		notify_option = "MailOnFailure"
+		notify_option = "NoNotification"
 	}
 
 	`, workspaceSuffix)
@@ -230,26 +233,27 @@ func TestAccRefreshSchedule_skew(t *testing.T) {
 				Config: config,
 				Check: resource.ComposeTestCheckFunc(
 					set("powerbi_refresh_schedule.test", "dataset_id", &datasetID),
+					set("powerbi_refresh_schedule.test", "worksapce_id", &groupID),
 				),
 			},
 			// second step skew the resource and checks it gets reupdates it
 			{
 				PreConfig: func() {
 					client := testAccProvider.Meta().(*powerbiapi.Client)
-					client.UpdateRefreshSchedule(datasetID, powerbiapi.UpdateRefreshScheduleRequest{
-						Value: powerbiapi.UpdateRefreshScheduleRequestValue{
+					client.UpdateRefreshScheduleInGroup(groupID, datasetID, powerbiapi.UpdateRefreshScheduleInGroupRequest{
+						Value: powerbiapi.UpdateRefreshScheduleInGroupRequestValue{
 							LocalTimeZoneID: convertStringToPointer("UTC"),
 						},
 					})
 				},
 				Config: config,
 				Check: resource.ComposeTestCheckFunc(
-					testCheckRefreshSchedule("powerbi_refresh_schedule.test", powerbiapi.GetRefreshScheduleResponse{
+					testCheckRefreshSchedule("powerbi_refresh_schedule.test", powerbiapi.GetRefreshScheduleInGroupResponse{
 						Enabled:         false,
 						Days:            []string{"Monday", "Wednesday", "Friday"},
 						Times:           []string{"09:00", "17:30"},
 						LocalTimeZoneID: "Pacific Standard Time",
-						NotifyOption:    "MailOnFailure",
+						NotifyOption:    "NoNotification",
 					}),
 				),
 			},
@@ -257,16 +261,16 @@ func TestAccRefreshSchedule_skew(t *testing.T) {
 			{
 				PreConfig: func() {
 					client := testAccProvider.Meta().(*powerbiapi.Client)
-					client.DeleteDataset(datasetID)
+					client.DeleteDatasetInGroup(groupID, datasetID)
 				},
 				Config: config,
 				Check: resource.ComposeTestCheckFunc(
-					testCheckRefreshSchedule("powerbi_refresh_schedule.test", powerbiapi.GetRefreshScheduleResponse{
+					testCheckRefreshSchedule("powerbi_refresh_schedule.test", powerbiapi.GetRefreshScheduleInGroupResponse{
 						Enabled:         false,
 						Days:            []string{"Monday", "Wednesday", "Friday"},
 						Times:           []string{"09:00", "17:30"},
 						LocalTimeZoneID: "Pacific Standard Time",
-						NotifyOption:    "MailOnFailure",
+						NotifyOption:    "NoNotification",
 					}),
 				),
 			},
@@ -274,15 +278,19 @@ func TestAccRefreshSchedule_skew(t *testing.T) {
 	})
 }
 
-func testCheckRefreshSchedule(scheduleRefreshResourceName string, expectedRefreshSchedule powerbiapi.GetRefreshScheduleResponse) resource.TestCheckFunc {
+func testCheckRefreshSchedule(scheduleRefreshResourceName string, expectedRefreshSchedule powerbiapi.GetRefreshScheduleInGroupResponse) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		refreshScheduleID, err := getID(s, scheduleRefreshResourceName)
+		datasetID, err := getResourceProperty(s, scheduleRefreshResourceName, "dataset_id")
+		if err != nil {
+			return err
+		}
+		groupID, err := getResourceProperty(s, scheduleRefreshResourceName, "workspace_id")
 		if err != nil {
 			return err
 		}
 
 		client := testAccProvider.Meta().(*powerbiapi.Client)
-		actualRefreshSchedule, err := client.GetRefreshSchedule(refreshScheduleID)
+		actualRefreshSchedule, err := client.GetRefreshScheduleInGroup(groupID, datasetID)
 
 		if err != nil {
 			return err

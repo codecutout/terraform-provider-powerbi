@@ -45,19 +45,39 @@ jobs:
 
   # run acceptance tests in a matrix with Terraform core versions
   test:
-    name: Matrix Test
+    name: Acceptance Tests - terraform v${{matrix.terraform}} - auth with ${{matrix.authsecrets.name}}
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 15
     strategy:
       fail-fast: false
-      max-parallel: 1 #limits on the PowerBI API can Too Many Request errors in the tests
+      max-parallel: 2 #limits on the PowerBI API can Too Many Request errors in the tests
       matrix:
+
         # list whatever Terraform versions here you would like to support
         terraform:
           - '0.12.29'
           - '0.13.4'
           - '0.14.0-beta2'
+
+        # list to determine different auth options. Contains only secret name as cant reference secrets directly here
+        authsecrets:
+          - name: password with admin
+            powerbi_tenant_id: POWERBI_TENANT_ID
+            powerbi_client_id: POWERBI_CLIENT_ID
+            powerbi_client_secret: POWERBI_CLIENT_SECRET
+            powerbi_username: POWERBI_USERNAME
+            powerbi_password: POWERBI_PASSWORD
+
+          - name: client credentials
+            powerbi_tenant_id: CLIENT_CREDENTIALS_POWERBI_TENANT_ID
+            powerbi_client_id: CLIENT_CREDENTIALS_POWERBI_CLIENT_ID
+            powerbi_client_secret: CLIENT_CREDENTIALS_POWERBI_CLIENT_SECRET
+            powerbi_username: EMPTY
+            powerbi_password: EMPTY
+        
+       
+
     steps:
 
     - name: Set up Go
@@ -78,11 +98,11 @@ jobs:
       env:
         TF_ACC: "1"
         TF_ACC_TERRAFORM_VERSION: ${{ matrix.terraform }}
-        POWERBI_TENANT_ID: ${{ secrets.POWERBI_TENANT_ID }}
-        POWERBI_CLIENT_ID: ${{ secrets.POWERBI_CLIENT_ID }}
-        POWERBI_CLIENT_SECRET: ${{ secrets.POWERBI_CLIENT_SECRET }}
-        POWERBI_USERNAME: ${{ secrets.POWERBI_USERNAME }}
-        POWERBI_PASSWORD: ${{ secrets.POWERBI_PASSWORD }}
+        POWERBI_TENANT_ID: ${{ secrets[matrix.authsecrets.powerbi_tenant_id] }}
+        POWERBI_CLIENT_ID: ${{ secrets[matrix.authsecrets.powerbi_client_id] }}
+        POWERBI_CLIENT_SECRET: ${{ secrets[matrix.authsecrets.powerbi_client_secret] }}
+        POWERBI_USERNAME: ${{ secrets[matrix.authsecrets.powerbi_username] }}
+        POWERBI_PASSWORD: ${{ secrets[matrix.authsecrets.powerbi_password] }}
 
         # Set whatever additional acceptance test env vars here. You can
         # optionally use data from your repository secrets using the

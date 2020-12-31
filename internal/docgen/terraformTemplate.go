@@ -16,6 +16,7 @@ type property struct {
 }
 
 type nestedObjectProperty struct {
+	HeaderText   string
 	Name         string
 	NestedSchema map[string]*schema.Schema
 }
@@ -83,14 +84,14 @@ func propertyDocumentation(propertySchemas map[string]*schema.Schema, filter fun
 }
 func writePropertyDocumentation(writer *strings.Builder, propertySchemas map[string]*schema.Schema, filter func(propKey string, propValue *schema.Schema) bool) {
 
-	filteredPropertySchames := make(map[string]*schema.Schema)
+	filteredPropertySchemas := make(map[string]*schema.Schema)
 	for key, value := range propertySchemas {
 		if filter(key, value) {
-			filteredPropertySchames[key] = value
+			filteredPropertySchemas[key] = value
 		}
 	}
 
-	sortedProperties := sortProperties(filteredPropertySchames)
+	sortedProperties := sortProperties(filteredPropertySchemas)
 
 	nestedObjects := make([]nestedObjectProperty, 0)
 
@@ -99,8 +100,9 @@ func writePropertyDocumentation(writer *strings.Builder, propertySchemas map[str
 		descriptionSuffix := ""
 		res, isNestedResource := prop.Schema.Elem.(*schema.Resource)
 		if isNestedResource {
-			nestedObjects = append(nestedObjects, nestedObjectProperty{Name: prop.Name, NestedSchema: res.Schema})
-			descriptionSuffix = capitilizeFirstCharacter(indefiniteArticle(prop.Name)) + " [`" + prop.Name + "`](#prop-" + prop.Name + ") block is defined below."
+			headerText := capitalizeFirstCharacter(indefiniteArticle(prop.Name)) + " `" + prop.Name + "` block supports the following:"
+			nestedObjects = append(nestedObjects, nestedObjectProperty{HeaderText: headerText, Name: prop.Name, NestedSchema: res.Schema})
+			descriptionSuffix = capitalizeFirstCharacter(indefiniteArticle(prop.Name)) + " [`" + prop.Name + "`](#" + headerTextToAnchorName(headerText) + ") block is defined below."
 		}
 
 		tagString := buildTagString(prop.Schema)
@@ -108,16 +110,17 @@ func writePropertyDocumentation(writer *strings.Builder, propertySchemas map[str
 			tagString = tagString + " "
 		}
 
-		writeLine(writer, "* `", prop.Name, "` - ", tagString, joinSentances(prop.Schema.Description, descriptionSuffix))
+		writeLine(writer, "* `", prop.Name, "` - ", tagString, joinSentences(prop.Schema.Description, descriptionSuffix))
 
 	}
 
 	for _, nestedProp := range nestedObjects {
+		writeLine(writer, "")
 		writeLine(writer, "---")
-		writeLine(writer,
-			"<a id=\"prop-", nestedProp.Name, "\"></a>",
-			capitilizeFirstCharacter(indefiniteArticle(nestedProp.Name)),
-			" `", nestedProp.Name, "` block supports the following:")
+		writeLine(writer, "")
+
+		// Assuming heading levels is not ideal, but this is the only way to get anchors in terraform registry docs
+		writeLine(writer, "#### ", nestedProp.HeaderText)
 		writePropertyDocumentation(writer, nestedProp.NestedSchema, filter)
 	}
 }

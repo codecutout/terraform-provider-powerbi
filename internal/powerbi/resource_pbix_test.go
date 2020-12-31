@@ -102,6 +102,7 @@ func TestAccPBIX_basic(t *testing.T) {
 func TestAccPBIX_parameters(t *testing.T) {
 	var updatedTime time.Time
 	var datasetID string
+	var groupID string
 	workspaceSuffix := acctest.RandString(6)
 
 	resource.Test(t, resource.TestCase{
@@ -129,6 +130,7 @@ func TestAccPBIX_parameters(t *testing.T) {
 				`, workspaceSuffix),
 				Check: resource.ComposeTestCheckFunc(
 					set("powerbi_pbix.test", "dataset_id", &datasetID),
+					set("powerbi_pbix.test", "workspace_id", &groupID),
 					setUpdatedTime("powerbi_pbix.test", &updatedTime),
 					testCheckParameter("powerbi_pbix.test", "ParamOne", "NewParamValueOne"),
 				),
@@ -138,8 +140,8 @@ func TestAccPBIX_parameters(t *testing.T) {
 				PreConfig: func() {
 					//update paramter outside of terraform to simulate drift
 					client := testAccProvider.Meta().(*powerbiapi.Client)
-					client.UpdateParameters(datasetID, powerbiapi.UpdateParametersRequest{
-						UpdateDetails: []powerbiapi.UpdateParametersRequestItem{
+					client.UpdateParametersInGroup(groupID, datasetID, powerbiapi.UpdateParametersInGroupRequest{
+						UpdateDetails: []powerbiapi.UpdateParametersInGroupRequestItem{
 							{
 								Name:     "ParamOne",
 								NewValue: "DriftedValue",
@@ -204,6 +206,7 @@ func TestAccPBIX_parameters(t *testing.T) {
 func TestAccPBIX_datasources(t *testing.T) {
 	var updatedTime time.Time
 	var datasetID string
+	var groupID string
 	workspaceSuffix := acctest.RandString(6)
 
 	resource.Test(t, resource.TestCase{
@@ -232,6 +235,7 @@ func TestAccPBIX_datasources(t *testing.T) {
 				`, workspaceSuffix),
 				Check: resource.ComposeTestCheckFunc(
 					set("powerbi_pbix.test", "dataset_id", &datasetID),
+					set("powerbi_pbix.test", "workspace_id", &groupID),
 					setUpdatedTime("powerbi_pbix.test", &updatedTime),
 					testCheckURLDatasource("powerbi_pbix.test", "https://services.odata.org/V3/(S(kbiqo1qkby04vnobw0li0fcp))/OData/OData.svc"),
 				),
@@ -241,15 +245,15 @@ func TestAccPBIX_datasources(t *testing.T) {
 				PreConfig: func() {
 					//update datasource outside of terraform to simulate drift
 					client := testAccProvider.Meta().(*powerbiapi.Client)
-					client.UpdateDatasources(datasetID, powerbiapi.UpdateDatasourcesRequest{
-						UpdateDetails: []powerbiapi.UpdateDatasourcesRequestItem{
+					client.UpdateDatasourcesInGroup(groupID, datasetID, powerbiapi.UpdateDatasourcesInGroupRequest{
+						UpdateDetails: []powerbiapi.UpdateDatasourcesInGroupRequestItem{
 							{
-								ConnectionDetails: powerbiapi.UpdateDatasourcesRequestItemConnectionDetails{
+								ConnectionDetails: powerbiapi.UpdateDatasourcesInGroupRequestItemConnectionDetails{
 									URL: emptyStringToNil("https://google.com"),
 								},
-								DatasourceSelector: powerbiapi.UpdateDatasourcesRequestItemDatasourceSelector{
+								DatasourceSelector: powerbiapi.UpdateDatasourcesInGroupRequestItemDatasourceSelector{
 									DatasourceType: "OData",
-									ConnectionDetails: powerbiapi.UpdateDatasourcesRequestItemConnectionDetails{
+									ConnectionDetails: powerbiapi.UpdateDatasourcesInGroupRequestItemConnectionDetails{
 										URL: emptyStringToNil("https://services.odata.org/V3/(S(kbiqo1qkby04vnobw0li0fcp))/OData/OData.svc"),
 									},
 								},
@@ -321,16 +325,29 @@ func testCheckResourceRemoved(resourceName string) resource.TestCheckFunc {
 	}
 }
 
-func getID(s *terraform.State, workspaceResourceName string) (string, error) {
-	rs, ok := s.RootModule().Resources[workspaceResourceName]
+func getResourceID(s *terraform.State, resourceName string) (string, error) {
+	rs, ok := s.RootModule().Resources[resourceName]
 	if !ok {
-		return "", fmt.Errorf("resource not found: %s", workspaceResourceName)
+		return "", fmt.Errorf("resource not found: %s", resourceName)
 	}
 
 	if rs.Primary.ID == "" {
 		return "", fmt.Errorf("resource id not set")
 	}
 	return rs.Primary.ID, nil
+}
+
+func getResourceProperty(s *terraform.State, resourceName string, property string) (string, error) {
+	rs, ok := s.RootModule().Resources[resourceName]
+	if !ok {
+		return "", fmt.Errorf("resource not found: %s", resourceName)
+	}
+
+	propVal, ok := rs.Primary.Attributes[property]
+	if !ok {
+		return "", fmt.Errorf("resource property %s not set", property)
+	}
+	return propVal, nil
 }
 
 func set(resourceName string, configName string, outID *string) resource.TestCheckFunc {
@@ -347,12 +364,18 @@ func set(resourceName string, configName string, outID *string) resource.TestChe
 
 func setUpdatedTime(pbixResourceName string, outUpdatedTime *time.Time) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		pbixID, err := getID(s, pbixResourceName)
+		pbixID, err := getResourceID(s, pbixResourceName)
 		if err != nil {
 			return err
 		}
+
+		groupID, err := getResourceProperty(s, pbixResourceName, "workspace_id")
+		if err != nil {
+			return err
+		}
+
 		client := testAccProvider.Meta().(*powerbiapi.Client)
-		im, err := client.GetImport(pbixID)
+		im, err := client.GetImportInGroup(groupID, pbixID)
 		if err != nil {
 			return err
 		}
@@ -365,7 +388,7 @@ func setUpdatedTime(pbixResourceName string, outUpdatedTime *time.Time) resource
 
 func testCheckDatasetExistsInWorkspace(workspaceResourceName string, expectedDatasetName string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		groupID, err := getID(s, workspaceResourceName)
+		groupID, err := getResourceID(s, workspaceResourceName)
 		if err != nil {
 			return err
 		}
@@ -388,7 +411,7 @@ func testCheckDatasetExistsInWorkspace(workspaceResourceName string, expectedDat
 
 func testCheckDatasetDoesNotExistsInWorkspace(workspaceResourceName string, expectedDatasetName string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		groupID, err := getID(s, workspaceResourceName)
+		groupID, err := getResourceID(s, workspaceResourceName)
 		if err != nil {
 			return err
 		}
@@ -409,7 +432,7 @@ func testCheckDatasetDoesNotExistsInWorkspace(workspaceResourceName string, expe
 
 func testCheckReportExistsInWorkspace(workspaceResourceName string, expectedReportName string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		groupID, err := getID(s, workspaceResourceName)
+		groupID, err := getResourceID(s, workspaceResourceName)
 		if err != nil {
 			return err
 		}
@@ -432,7 +455,7 @@ func testCheckReportExistsInWorkspace(workspaceResourceName string, expectedRepo
 
 func testCheckReportDoesNotExistsInWorkspace(workspaceResourceName string, expectedReportName string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		groupID, err := getID(s, workspaceResourceName)
+		groupID, err := getResourceID(s, workspaceResourceName)
 		if err != nil {
 			return err
 		}
@@ -454,12 +477,17 @@ func testCheckReportDoesNotExistsInWorkspace(workspaceResourceName string, expec
 
 func testCheckUpdatedAfter(pbixResourceName string, updatedAfter *time.Time) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		pbixID, err := getID(s, pbixResourceName)
+		pbixID, err := getResourceID(s, pbixResourceName)
 		if err != nil {
 			return err
 		}
+		groupID, err := getResourceProperty(s, pbixResourceName, "workspace_id")
+		if err != nil {
+			return err
+		}
+
 		client := testAccProvider.Meta().(*powerbiapi.Client)
-		im, err := client.GetImport(pbixID)
+		im, err := client.GetImportInGroup(groupID, pbixID)
 		if err != nil {
 			return err
 		}
@@ -475,12 +503,17 @@ func testCheckUpdatedAfter(pbixResourceName string, updatedAfter *time.Time) res
 
 func testCheckUpdatedAt(pbixResourceName string, updatedAt *time.Time) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		pbixID, err := getID(s, pbixResourceName)
+		pbixID, err := getResourceID(s, pbixResourceName)
 		if err != nil {
 			return err
 		}
+		groupID, err := getResourceProperty(s, pbixResourceName, "workspace_id")
+		if err != nil {
+			return err
+		}
+
 		client := testAccProvider.Meta().(*powerbiapi.Client)
-		im, err := client.GetImport(pbixID)
+		im, err := client.GetImportInGroup(groupID, pbixID)
 		if err != nil {
 			return err
 		}
@@ -497,18 +530,18 @@ func testCheckUpdatedAt(pbixResourceName string, updatedAt *time.Time) resource.
 func testCheckParameter(pbixResourceName string, expectedParameterName string, expectedParameterValue string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 
-		rs, ok := s.RootModule().Resources[pbixResourceName]
-		if !ok {
-			return fmt.Errorf("resource not found: %s", pbixResourceName)
+		datasetID, err := getResourceProperty(s, pbixResourceName, "dataset_id")
+		if err != nil {
+			return err
 		}
 
-		datasetID, ok := rs.Primary.Attributes["dataset_id"]
-		if !ok {
-			return fmt.Errorf("unable to find dataset_id on resource %s", pbixResourceName)
+		groupID, err := getResourceProperty(s, pbixResourceName, "workspace_id")
+		if err != nil {
+			return err
 		}
 
 		client := testAccProvider.Meta().(*powerbiapi.Client)
-		params, err := client.GetParameters(datasetID)
+		params, err := client.GetParametersInGroup(groupID, datasetID)
 		if err != nil {
 			return err
 		}
@@ -531,18 +564,17 @@ func testCheckParameter(pbixResourceName string, expectedParameterName string, e
 func testCheckURLDatasource(pbixResourceName string, expectedValue string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
 
-		rs, ok := s.RootModule().Resources[pbixResourceName]
-		if !ok {
-			return fmt.Errorf("resource not found: %s", pbixResourceName)
+		datasetID, err := getResourceProperty(s, pbixResourceName, "dataset_id")
+		if err != nil {
+			return err
 		}
-
-		datasetID, ok := rs.Primary.Attributes["dataset_id"]
-		if !ok {
-			return fmt.Errorf("unable to find dataset_id on resource %s", pbixResourceName)
+		groupID, err := getResourceProperty(s, pbixResourceName, "workspace_id")
+		if err != nil {
+			return err
 		}
 
 		client := testAccProvider.Meta().(*powerbiapi.Client)
-		datasources, err := client.GetDatasources(datasetID)
+		datasources, err := client.GetDatasourcesInGroup(groupID, datasetID)
 		if err != nil {
 			return err
 		}

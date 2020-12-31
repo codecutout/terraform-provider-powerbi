@@ -25,23 +25,23 @@ func indefiniteArticle(noun string) string {
 	return "a"
 }
 
-func joinSentances(sentances ...string) string {
-	var cleanedSentances []string
-	for _, sentance := range sentances {
-		var cleanedSentance = capitilizeFirstCharacter(strings.Trim(sentance, ". "))
-		if cleanedSentance != "" {
-			cleanedSentances = append(cleanedSentances, cleanedSentance)
+func joinSentences(sentences ...string) string {
+	var cleanedSentences []string
+	for _, sentence := range sentences {
+		var cleanedSentence = capitalizeFirstCharacter(strings.Trim(sentence, ". "))
+		if cleanedSentence != "" {
+			cleanedSentences = append(cleanedSentences, cleanedSentence)
 		}
 	}
 
-	joinedSentances := strings.Join(cleanedSentances, ". ")
-	if joinedSentances != "" {
-		joinedSentances += "."
+	joinedSentences := strings.Join(cleanedSentences, ". ")
+	if joinedSentences != "" {
+		joinedSentences += "."
 	}
-	return joinedSentances
+	return joinedSentences
 }
 
-func capitilizeFirstCharacter(str string) string {
+func capitalizeFirstCharacter(str string) string {
 	runes := []rune(str)
 	if len(runes) == 0 {
 		return ""
@@ -49,6 +49,13 @@ func capitilizeFirstCharacter(str string) string {
 		return strings.ToUpper(string(runes[0]))
 	}
 	return strings.ToUpper(string(runes[0])) + string(runes[1:])
+}
+
+func headerTextToAnchorName(str string) string {
+	outputText := strings.ToLower(str)
+	outputText = regexp.MustCompile("[^\\w\\s]").ReplaceAllString(outputText, "")
+	outputText = regexp.MustCompile("\\s+").ReplaceAllString(outputText, "-")
+	return outputText
 }
 
 func toMap(in interface{}) (map[string]interface{}, error) {

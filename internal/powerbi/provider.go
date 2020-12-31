@@ -30,16 +30,16 @@ func Provider() *schema.Provider {
 			},
 			"username": {
 				Type:        schema.TypeString,
-				Required:    true,
+				Optional:    true,
 				DefaultFunc: schema.EnvDefaultFunc("POWERBI_USERNAME", ""),
-				Description: "The username for the a Power BI user to use for performing Power BI REST API operations. Power BI only supports delegate permissions so a real user must be specified. This can also be sourced from the `POWERBI_USERNAME` Environment Variable",
+				Description: "The username for the a Power BI user to use for performing Power BI REST API operations. If provided will use resource owner password credentials flow with delegate permissions. This can also be sourced from the `POWERBI_USERNAME` Environment Variable",
 			},
 			"password": {
 				Type:        schema.TypeString,
-				Required:    true,
+				Optional:    true,
 				Sensitive:   true,
 				DefaultFunc: schema.EnvDefaultFunc("POWERBI_PASSWORD", ""),
-				Description: "The password for the a Power BI user to use for performing Power BI REST API operations. Power BI only supports delegate permissions so a real user must be specified. This can also be sourced from the `POWERBI_PASSWORD` Environment Variable",
+				Description: "The password for the a Power BI user to use for performing Power BI REST API operations. If provided will use resource owner password credentials flow with delegate permissions. This can also be sourced from the `POWERBI_PASSWORD` Environment Variable",
 			},
 		},
 
@@ -54,11 +54,23 @@ func Provider() *schema.Provider {
 }
 
 func providerConfigure(d *schema.ResourceData) (interface{}, error) {
-	return powerbiapi.NewClient(
+
+	username, usernameOk := d.GetOk("username")
+	password, passwordOk := d.GetOk("password")
+
+	if usernameOk && passwordOk {
+		return powerbiapi.NewClientWithPasswordAuth(
+			d.Get("tenant_id").(string),
+			d.Get("client_id").(string),
+			d.Get("client_secret").(string),
+			username.(string),
+			password.(string),
+		)
+	}
+	return powerbiapi.NewClientWithClientCredentialAuth(
 		d.Get("tenant_id").(string),
 		d.Get("client_id").(string),
 		d.Get("client_secret").(string),
-		d.Get("username").(string),
-		d.Get("password").(string),
 	)
+
 }

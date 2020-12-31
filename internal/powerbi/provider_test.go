@@ -31,8 +31,6 @@ func testAccPreCheck(t *testing.T) {
 		"POWERBI_TENANT_ID",
 		"POWERBI_CLIENT_ID",
 		"POWERBI_CLIENT_SECRET",
-		"POWERBI_USERNAME",
-		"POWERBI_PASSWORD",
 	}
 	for _, requiredEnv := range requiredEnvs {
 		if v := os.Getenv(requiredEnv); v == "" {

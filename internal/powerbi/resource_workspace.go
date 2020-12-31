@@ -10,7 +10,7 @@ func ResourceWorkspace() *schema.Resource {
 	return &schema.Resource{
 		Create: createWorkspace,
 		Read:   readWorkspace,
-		Update: updateWorkspace,
+		//Update: updateWorkspace,
 		Delete: deleteWorkspace,
 		Importer: &schema.ResourceImporter{
 			State: schema.ImportStatePassthrough,
@@ -20,6 +20,7 @@ func ResourceWorkspace() *schema.Resource {
 			"name": {
 				Type:        schema.TypeString,
 				Required:    true,
+				ForceNew:    true,
 				Description: "Name of the workspace.",
 			},
 		},
@@ -59,15 +60,6 @@ func readWorkspace(d *schema.ResourceData, meta interface{}) error {
 }
 
 func updateWorkspace(d *schema.ResourceData, meta interface{}) error {
-	client := meta.(*powerbiapi.Client)
-
-	err := client.UpdateGroupAsAdmin(d.Id(), powerbiapi.UpdateGroupAsAdminRequest{
-		Name: d.Get("name").(string),
-	})
-	if err != nil {
-		return err
-	}
-
 	return readWorkspace(d, meta)
 }
 
