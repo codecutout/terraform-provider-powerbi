@@ -20,11 +20,11 @@ resource "powerbi_workspace_access" "allow_azure_app" {
 ```
 
 ## Argument Reference
-The following arguments are supported:
+#### The following arguments are supported:
 <!-- docgen:NonComputedParameters -->
 * `workspace_id` - (Required, Forces new resource) Workspace ID to which user access would be given.
-* `group_user_access_right` - (Required) User access level to workspace. Any value from Admin, Contributor, Member, None or Viewer.
-* `principal_type` - (Required) The principal type. Any value from App, Group or User.
+* `group_user_access_right` - (Required) User access level to workspace. Any value from `Admin`, `Contributor`, `Member`, `Viewer` or `None`.
+* `principal_type` - (Required) The principal type. Any value from `App`, `Group` or `User`.
 * `email_address` - (Optional, Forces new resource) Email address of the user.
 <!-- /docgen -->
 <!-- docgen:ComputedParameters -->
@@ -33,7 +33,7 @@ The following arguments are supported:
 <!-- /docgen -->
 
 ## Attributes Reference
-The following attributes are exported in addition to the arguments listed above:
+#### The following attributes are exported in addition to the arguments listed above:
 * `id` - The ID of the allowed user access.
 <!-- docgen:ComputedParameters -->
 * `identifier` - (Optional, Forces new resource) Identifier of the principal.

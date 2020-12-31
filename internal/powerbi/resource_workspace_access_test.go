@@ -2,6 +2,7 @@ package powerbi
 
 import (
 	"fmt"
+	"os"
 	"regexp"
 	"testing"
 
@@ -11,11 +12,17 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/terraform"
 )
 
-func TestAccGroupUser_basic(t *testing.T) {
+func TestAccWorkspaceAccess_basic(t *testing.T) {
 	workspaceSuffix := acctest.RandString(6)
+	secondaryUsername := os.Getenv("POWERBI_SECONDARY_USERNAME")
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
+		PreCheck: func() {
+			testAccPreCheck(t)
+			if secondaryUsername == "" {
+				t.Fatal("POWERBI_SECONDARY_USERNAME must be set for workspace access acceptance tests")
+			}
+		},
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckPowerbiWorkspaceDestroy,
 		Steps: []resource.TestStep{
@@ -29,15 +36,15 @@ func TestAccGroupUser_basic(t *testing.T) {
 				resource "powerbi_workspace_access" "test" {
 					workspace_id = "${powerbi_workspace.test.id}"
 					group_user_access_right = "Admin"
-					email_address = "vijaykumar.u@nuance.com"
+					email_address = "%s"
 					principal_type = "User"
 				}
-				`, workspaceSuffix),
+				`, workspaceSuffix, secondaryUsername),
 				Check: resource.ComposeTestCheckFunc(
-					testCheckGroupUserExistsInWorkspace("powerbi_workspace.test", "vijaykumar.u@nuance.com"),
+					testCheckGroupUserExistsInWorkspace("powerbi_workspace.test", secondaryUsername),
 					resource.TestCheckResourceAttrSet("powerbi_workspace_access.test", "id"),
 					resource.TestCheckResourceAttrSet("powerbi_workspace_access.test", "workspace_id"),
-					resource.TestCheckResourceAttr("powerbi_workspace_access.test", "id", fmt.Sprintf("Acceptance Test Workspace %s/%s", workspaceSuffix, "vijaykumar.u@nuance.com")),
+					resource.TestCheckResourceAttr("powerbi_workspace_access.test", "id", fmt.Sprintf("Acceptance Test Workspace %s/%s", workspaceSuffix, secondaryUsername)),
 				),
 			},
 			// final step checks importing the current state we reached in the step above
@@ -50,7 +57,7 @@ func TestAccGroupUser_basic(t *testing.T) {
 	})
 }
 
-func TestAccGroupUser_validation(t *testing.T) {
+func TestAccWorkspaceAccess_validation(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
@@ -103,10 +110,11 @@ func TestAccGroupUser_validation(t *testing.T) {
 	})
 }
 
-func TestAccGroupUser_skew(t *testing.T) {
+func TestAccWorkspaceAccess_skew(t *testing.T) {
 	var workspaceUserID string
 	var groupID string
 	workspaceSuffix := acctest.RandString(6)
+	secondaryUsername := os.Getenv("POWERBI_SECONDARY_USERNAME")
 
 	config := fmt.Sprintf(`
 	resource "powerbi_workspace" "test" {
@@ -116,13 +124,18 @@ func TestAccGroupUser_skew(t *testing.T) {
 	resource "powerbi_workspace_access" "test" {
 		workspace_id = "${powerbi_workspace.test.id}"
 		group_user_access_right = "Admin"
-		email_address = "vijaykumar.u@nuance.com"
+		email_address = "%s"
 		principal_type = "User"
 	}
-	`, workspaceSuffix)
+	`, workspaceSuffix, secondaryUsername)
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
+		PreCheck: func() {
+			testAccPreCheck(t)
+			if secondaryUsername == "" {
+				t.Fatal("POWERBI_SECONDARY_USERNAME must be set for workspace access acceptance tests")
+			}
+		},
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckPowerbiWorkspaceDestroy,
 		Steps: []resource.TestStep{
@@ -138,8 +151,8 @@ func TestAccGroupUser_skew(t *testing.T) {
 			{
 				PreConfig: func() {
 					client := testAccProvider.Meta().(*powerbiapi.Client)
-					client.UpdateGroupUser(groupID, powerbiapi.GroupUserDetails{
-						Identifier:           "vijaykumar.u@nuance.com",
+					client.UpdateGroupUser(groupID, powerbiapi.UpdateGroupUserRequest{
+						Identifier:           secondaryUsername,
 						PrincipalType:        "User",
 						GroupUserAccessRight: "Member",
 					})
@@ -147,7 +160,7 @@ func TestAccGroupUser_skew(t *testing.T) {
 				},
 				Config: config,
 				Check: resource.ComposeTestCheckFunc(
-					testCheckGroupUserExistsInWorkspace("powerbi_workspace.test", "vijaykumar.u@nuance.com"),
+					testCheckGroupUserExistsInWorkspace("powerbi_workspace.test", secondaryUsername),
 					resource.TestCheckResourceAttr("powerbi_workspace_access.test", "group_user_access_right", "Admin"),
 				),
 			},
@@ -159,7 +172,7 @@ func TestAccGroupUser_skew(t *testing.T) {
 				},
 				Config: config,
 				Check: resource.ComposeTestCheckFunc(
-					testCheckGroupUserExistsInWorkspace("powerbi_workspace.test", "vijaykumar.u@nuance.com"),
+					testCheckGroupUserExistsInWorkspace("powerbi_workspace.test", secondaryUsername),
 				),
 			},
 		},

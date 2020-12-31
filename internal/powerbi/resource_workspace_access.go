@@ -8,6 +8,7 @@ import (
 
 	"github.com/codecutout/terraform-provider-powerbi/internal/powerbiapi"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
 )
 
 // ResourceGroupUsers represents user management in Power BI workspace.
@@ -29,17 +30,10 @@ func ResourceGroupUsers() *schema.Resource {
 				ForceNew:    true,
 			},
 			"group_user_access_right": {
-				Type:        schema.TypeString,
-				Description: "User access level to workspace. Any value from Admin, Contributor, Member, None or Viewer.",
-				Required:    true,
-				ValidateFunc: func(val interface{}, key string) (warns []string, errs []error) {
-					stringVal := val.(string)
-					reg := regexp.MustCompile("^(Admin|Contributor|Member|None|Viewer)$")
-					if !reg.MatchString(stringVal) {
-						errs = append(errs, fmt.Errorf("Expected argument 'group_user_access_right' to have value one of Admin, Contributor, Member, None or Viewer. Found '%v'", stringVal))
-					}
-					return warns, errs
-				},
+				Type:         schema.TypeString,
+				Description:  "User access level to workspace. Any value from `Admin`, `Contributor`, `Member`, `Viewer` or `None`.",
+				Required:     true,
+				ValidateFunc: validation.StringInSlice([]string{"Admin", "Contributor", "Member", "Viewer", "None"}, false),
 			},
 			"display_name": {
 				Type:        schema.TypeString,
@@ -48,18 +42,11 @@ func ResourceGroupUsers() *schema.Resource {
 				Computed:    true,
 			},
 			"email_address": {
-				Type:        schema.TypeString,
-				Description: "Email address of the user.",
-				Optional:    true,
-				ForceNew:    true,
-				ValidateFunc: func(val interface{}, key string) (warns []string, errs []error) {
-					stringVal := val.(string)
-					reg := regexp.MustCompile(".*@.*")
-					if !reg.MatchString(stringVal) {
-						errs = append(errs, fmt.Errorf("Expected argument 'email_address' to be like user@mailserver.com. Found '%v'", stringVal))
-					}
-					return warns, errs
-				},
+				Type:         schema.TypeString,
+				Description:  "Email address of the user.",
+				Optional:     true,
+				ForceNew:     true,
+				ValidateFunc: validation.StringMatch(regexp.MustCompile(".*@.*"), "must be an email address"),
 			},
 			"identifier": {
 				Type:        schema.TypeString,
@@ -69,17 +56,10 @@ func ResourceGroupUsers() *schema.Resource {
 				ForceNew:    true,
 			},
 			"principal_type": {
-				Type:        schema.TypeString,
-				Description: "The principal type. Any value from App, Group or User.",
-				Required:    true,
-				ValidateFunc: func(val interface{}, key string) (warns []string, errs []error) {
-					stringVal := val.(string)
-					reg := regexp.MustCompile("^(User|App|Group)$")
-					if !reg.MatchString(stringVal) {
-						errs = append(errs, fmt.Errorf("Expected argument 'principal_type' to have value one of User, Group or App. Found '%v'", stringVal))
-					}
-					return warns, errs
-				},
+				Type:         schema.TypeString,
+				Description:  "The principal type. Any value from `App`, `Group` or `User`.",
+				Required:     true,
+				ValidateFunc: validation.StringInSlice([]string{"User", "App", "Group"}, false),
 			},
 		},
 		Timeouts: &schema.ResourceTimeout{
@@ -98,7 +78,7 @@ func addGroupUser(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	client := meta.(*powerbiapi.Client)
-	err := client.AddGroupUser(groupID, powerbiapi.GroupUserDetails{
+	err := client.AddGroupUser(groupID, powerbiapi.AddGroupUserRequest{
 		GroupUserAccessRight: d.Get("group_user_access_right").(string),
 		DisplayName:          d.Get("display_name").(string),
 		PrincipalType:        d.Get("principal_type").(string),
@@ -188,7 +168,7 @@ func updateGroupUser(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	if d.HasChange("group_user_access_right") {
-		err := client.UpdateGroupUser(groupID, powerbiapi.GroupUserDetails{
+		err := client.UpdateGroupUser(groupID, powerbiapi.UpdateGroupUserRequest{
 			GroupUserAccessRight: d.Get("group_user_access_right").(string),
 			DisplayName:          d.Get("display_name").(string),
 			PrincipalType:        d.Get("principal_type").(string),
