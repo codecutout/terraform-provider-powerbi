@@ -103,7 +103,7 @@ jobs:
         POWERBI_CLIENT_SECRET: ${{ secrets[matrix.authsecrets.powerbi_client_secret] }}
         POWERBI_USERNAME: ${{ secrets[matrix.authsecrets.powerbi_username] }}
         POWERBI_PASSWORD: ${{ secrets[matrix.authsecrets.powerbi_password] }}
-
+        POWERBI_SECONDARY_USERNAME: ${{ secrets.POWERBI_SECONDARY_USERNAME }}
         # Set whatever additional acceptance test env vars here. You can
         # optionally use data from your repository secrets using the
         # following syntax:
