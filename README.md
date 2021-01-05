@@ -1,6 +1,6 @@
 # Terraform Provider for Power BI
 
-[![Build status](https://ci.appveyor.com/api/projects/status/lcrfr9no2b7ufu87/branch/master?svg=true)](https://ci.appveyor.com/project/codecutout/terraform-provider-powerbi/branch/master)
+[![Build status](https://github.com/codecutout/terraform-provider-powerbi/actions?query=workflow%3Atests+branch%3Amaster)](https://github.com/codecutout/terraform-provider-powerbi/workflows/tests/badge.svg?branch=master)
 
 A Terraform provider that allows the creation and updating of Power BI resources
 
