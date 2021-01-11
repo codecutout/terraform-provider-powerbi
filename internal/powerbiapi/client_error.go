@@ -20,13 +20,13 @@ type ErrorResponse struct {
 	Error ErrorBody
 }
 
-// ErrorBody represents the error returend in the body of Power BI API requests
+// ErrorBody represents the error returned in the body of Power BI API requests
 type ErrorBody struct {
 	Code    string
 	Message string
 }
 
-type roundTripperErrorOnUnsuccessful struct {
+type errorOnUnsuccessfulRoundTripper struct {
 	innerRoundTripper http.RoundTripper
 }
 
@@ -39,7 +39,13 @@ func (err HTTPUnsuccessfulError) Error() string {
 	return message
 }
 
-func (h roundTripperErrorOnUnsuccessful) RoundTrip(req *http.Request) (*http.Response, error) {
+func newErrorOnUnsuccessfulRoundTripper(next http.RoundTripper) http.RoundTripper {
+	return &errorOnUnsuccessfulRoundTripper{
+		innerRoundTripper: next,
+	}
+}
+
+func (h *errorOnUnsuccessfulRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
 
 	resp, err := h.innerRoundTripper.RoundTrip(req)
 

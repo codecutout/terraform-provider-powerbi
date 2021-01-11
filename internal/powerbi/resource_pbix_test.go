@@ -138,7 +138,7 @@ func TestAccPBIX_parameters(t *testing.T) {
 			// identical resource definition with parameter state drift
 			{
 				PreConfig: func() {
-					//update paramter outside of terraform to simulate drift
+					//update parameter outside of terraform to simulate drift
 					client := testAccProvider.Meta().(*powerbiapi.Client)
 					client.UpdateParametersInGroup(groupID, datasetID, powerbiapi.UpdateParametersInGroupRequest{
 						UpdateDetails: []powerbiapi.UpdateParametersInGroupRequestItem{

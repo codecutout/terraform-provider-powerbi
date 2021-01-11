@@ -16,38 +16,39 @@ type tokenResponse struct {
 	AccessToken string `json:"access_token"`
 }
 
-type roundTripperBearerToken struct {
+type bearerTokenRoundTripper struct {
 	innerRoundTripper http.RoundTripper
-	tokenCache        *roundTripperBearerTokenCache
 	getToken          func(*http.Client) (string, error)
+	mux               sync.Mutex
+	token             string
 }
 
-type roundTripperBearerTokenCache struct {
-	mux   sync.Mutex
-	token string
+func newBearerTokenRoundTripper(getToken func(*http.Client) (string, error), next http.RoundTripper) http.RoundTripper {
+	return &bearerTokenRoundTripper{
+		innerRoundTripper: next,
+		getToken:          getToken,
+	}
 }
 
-func (rt roundTripperBearerToken) RoundTrip(req *http.Request) (*http.Response, error) {
+func (rt *bearerTokenRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
 	newRequest := *req
 
-	if rt.tokenCache.token == "" {
+	if rt.token == "" {
 		err := func() error {
-			rt.tokenCache.mux.Lock()
-			defer rt.tokenCache.mux.Unlock()
+			rt.mux.Lock()
+			defer rt.mux.Unlock()
 
-			if rt.tokenCache.token == "" {
+			if rt.token == "" {
 
 				// create own http client so we dont try to add token to request to get tokens
 				httpClient := cleanhttp.DefaultClient()
-				httpClient.Transport = roundTripperErrorOnUnsuccessful{
-					innerRoundTripper: httpClient.Transport,
-				}
+				httpClient.Transport = newErrorOnUnsuccessfulRoundTripper(httpClient.Transport)
 
 				token, err := rt.getToken(httpClient)
 				if err != nil {
 					return err
 				}
-				rt.tokenCache.token = token
+				rt.token = token
 			}
 			return nil
 		}()
@@ -56,7 +57,7 @@ func (rt roundTripperBearerToken) RoundTrip(req *http.Request) (*http.Response, 
 		}
 	}
 
-	newRequest.Header.Set("Authorization", "Bearer "+rt.tokenCache.token)
+	newRequest.Header.Set("Authorization", "Bearer "+rt.token)
 
 	return rt.innerRoundTripper.RoundTrip(&newRequest)
 }

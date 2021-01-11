@@ -3,7 +3,11 @@ package powerbi
 import (
 	"fmt"
 	"os"
+	"sync"
 	"testing"
+	"time"
+
+	"github.com/codecutout/terraform-provider-powerbi/internal/powerbiapi"
 
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/terraform"
@@ -20,10 +24,47 @@ func init() {
 	}
 }
 
-func TestProvider(t *testing.T) {
+func TestProvider_validate(t *testing.T) {
 	if err := Provider().InternalValidate(); err != nil {
 		t.Fatalf("err: %s", err)
 	}
+}
+
+func TestProvider_apiThrottling(t *testing.T) {
+
+	provider := Provider()
+	provider.Configure(terraform.NewResourceConfigRaw(nil))
+	client := provider.Meta().(*powerbiapi.Client)
+
+	c := make(chan int)
+
+	workerGroup := sync.WaitGroup{}
+	for workerIndex := 0; workerIndex < 3; workerIndex++ {
+		workerGroup.Add(1)
+		go func(workerIndex int) {
+			defer workerGroup.Done()
+			for v := range c {
+
+				t1 := time.Now()
+				_, err := client.GetGroups("", 1, 0)
+				t2 := time.Now()
+
+				t.Logf("worker %d: Request %d took %s", workerIndex, v, t2.Sub(t1))
+				if err != nil {
+
+					t.Error(err)
+					return
+				}
+			}
+		}(workerIndex)
+	}
+
+	for i := 0; i < 120; i++ {
+		c <- i
+	}
+	close(c)
+
+	workerGroup.Wait()
 }
 
 func testAccPreCheck(t *testing.T) {
