@@ -19,36 +19,34 @@ type Client struct {
 
 //NewClientWithPasswordAuth creates a Power BI REST API client using password authentication with delegated permissions
 func NewClientWithPasswordAuth(tenant string, clientID string, clientSecret string, username string, password string) (*Client, error) {
-
-	httpClient := cleanhttp.DefaultClient()
-
-	// add default header for all future requests
-	httpClient.Transport = roundTripperBearerToken{
-		innerRoundTripper: roundTripperErrorOnUnsuccessful{httpClient.Transport},
-		tokenCache:        &roundTripperBearerTokenCache{},
-		getToken: func(httpClient *http.Client) (string, error) {
-			return getAuthTokenWithPassword(httpClient, tenant, clientID, clientSecret, username, password)
-		},
-	}
-
-	return &Client{
-		httpClient,
-	}, nil
+	return newClient(func(httpClient *http.Client) (string, error) {
+		return getAuthTokenWithPassword(httpClient, tenant, clientID, clientSecret, username, password)
+	})
 }
 
 //NewClientWithClientCredentialAuth creates a Power BI REST API client using client credentials with application permissions
 func NewClientWithClientCredentialAuth(tenant string, clientID string, clientSecret string) (*Client, error) {
 
+	return newClient(func(httpClient *http.Client) (string, error) {
+		return getAuthTokenWithClientCredentials(httpClient, tenant, clientID, clientSecret)
+	})
+}
+
+func newClient(getAuthToken func(httpClient *http.Client) (string, error)) (*Client, error) {
 	httpClient := cleanhttp.DefaultClient()
 
-	// add default header for all future requests
-	httpClient.Transport = roundTripperBearerToken{
-		innerRoundTripper: roundTripperErrorOnUnsuccessful{httpClient.Transport},
-		tokenCache:        &roundTripperBearerTokenCache{},
-		getToken: func(httpClient *http.Client) (string, error) {
-			return getAuthTokenWithClientCredentials(httpClient, tenant, clientID, clientSecret)
-		},
-	}
+	// auth
+	httpClient.Transport = newBearerTokenRoundTripper(
+		getAuthToken,
+		// error
+		newErrorOnUnsuccessfulRoundTripper(
+			// retry
+			newRetryTooManyRequestsRoundTripper(
+				// actual call
+				httpClient.Transport,
+			),
+		),
+	)
 
 	return &Client{
 		httpClient,
@@ -72,7 +70,7 @@ func (client *Client) doJSON(method string, url string, body interface{}, respon
 
 func (client *Client) doMultipartJSON(method string, url string, body io.Reader, response interface{}) error {
 
-	httpRequest, err := newMultipartRequst(method, url, body)
+	httpRequest, err := newMultipartRequest(method, url, body)
 	if err != nil {
 		return err
 	}
@@ -106,7 +104,7 @@ func newJSONRequest(method string, url string, body interface{}) (*http.Request,
 	return httpRequest, nil
 }
 
-func newMultipartRequst(method string, url string, reader io.Reader) (*http.Request, error) {
+func newMultipartRequest(method string, url string, reader io.Reader) (*http.Request, error) {
 
 	// Create multipart writer
 	var buffer bytes.Buffer
