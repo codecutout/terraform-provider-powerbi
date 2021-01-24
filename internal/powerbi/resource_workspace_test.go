@@ -2,6 +2,8 @@ package powerbi
 
 import (
 	"fmt"
+	"os"
+	"strings"
 	"testing"
 
 	"github.com/codecutout/terraform-provider-powerbi/internal/powerbiapi"
@@ -42,6 +44,79 @@ func TestAccWorkspace_basic(t *testing.T) {
 					testCheckWorkspaceExistsWithName("powerbi_workspace.test", fmt.Sprintf("Acceptance Test Workspace %s - Updated", workspaceSuffix)),
 					resource.TestCheckResourceAttrSet("powerbi_workspace.test", "id"),
 					resource.TestCheckResourceAttr("powerbi_workspace.test", "name", fmt.Sprintf("Acceptance Test Workspace %s - Updated", workspaceSuffix)),
+				),
+			},
+			// final step checks importing the current state we reached in the step above
+			{
+				ResourceName:      "powerbi_workspace.test",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+	})
+}
+
+func TestAccWorkspace_capacity(t *testing.T) {
+	workspaceSuffix := acctest.RandString(6)
+	isPremiumCapacity := os.Getenv("POWERBI_IS_PREMIUM")
+	premiumCapacityID := os.Getenv("POWERBI_CAPACITY_ID")
+
+	resource.Test(t, resource.TestCase{
+		PreCheck: func() {
+			testAccPreCheck(t)
+
+			switch strings.ToLower(isPremiumCapacity) {
+			case "":
+				t.Fatal("POWERBI_IS_PREMIUM must be set for assigning capacity id to workspace acceptance tests")
+			case "true":
+				if premiumCapacityID == "" {
+					t.Fatal("POWERBI_CAPACITY_ID must be set when POWERBI_IS_PREMIUM is set to \"true\" for capacity id acceptance tests")
+				}
+			case "false":
+				t.Skip("Assign capacity id acceptance tests skipped")
+			default:
+				t.Fatal("POWERBI_IS_PREMIUM must be set to either \"true\" or \"false\"")
+			}
+		},
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckPowerbiWorkspaceDestroy,
+		Steps: []resource.TestStep{
+			// first step creates the resource
+			{
+				Config: fmt.Sprintf(`
+				resource "powerbi_workspace" "test" {
+					name = "Acceptance Test Workspace %s"
+				}
+				`, workspaceSuffix),
+				Check: resource.ComposeTestCheckFunc(
+					testCheckWorkspaceExistsWithName("powerbi_workspace.test", fmt.Sprintf("Acceptance Test Workspace %s", workspaceSuffix)),
+					resource.TestCheckResourceAttrSet("powerbi_workspace.test", "id"),
+					resource.TestCheckResourceAttr("powerbi_workspace.test", "name", fmt.Sprintf("Acceptance Test Workspace %s", workspaceSuffix)),
+				),
+			},
+			// second step assigns capacity id
+			{
+				Config: fmt.Sprintf(`
+				resource "powerbi_workspace" "test" {
+					name = "Acceptance Test Workspace %s"
+					capacity_id = "%s"
+				}
+				`, workspaceSuffix, premiumCapacityID),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttrSet("powerbi_workspace.test", "id"),
+					resource.TestCheckResourceAttr("powerbi_workspace.test", "capacity_id", premiumCapacityID),
+				),
+			},
+			// third step unassigns capacity id
+			{
+				Config: fmt.Sprintf(`
+				resource "powerbi_workspace" "test" {
+					name = "Acceptance Test Workspace %s"
+				}
+				`, workspaceSuffix),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttrSet("powerbi_workspace.test", "id"),
+					resource.TestCheckResourceAttr("powerbi_workspace.test", "capacity_id", ""),
 				),
 			},
 			// final step checks importing the current state we reached in the step above
