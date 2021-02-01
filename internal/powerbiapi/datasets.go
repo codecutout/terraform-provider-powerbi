@@ -5,6 +5,18 @@ import (
 	"net/url"
 )
 
+// GetDatasetInGroupResponse represents the details when getting a datasets in a group.
+type GetDatasetInGroupResponse struct {
+	ID                               string `json:"id"`
+	Name                             string
+	AddRowsAPIEnabled                bool
+	ConfiguredBy                     string
+	IsRefreshable                    bool
+	IsEffectiveIdentityRequired      bool
+	IsEffectiveIdentityRolesRequired bool
+	TargetStorageMode                string
+}
+
 // GetDatasetsInGroupResponse represents the details when getting a datasets in a group.
 type GetDatasetsInGroupResponse struct {
 	Value []GetDatasetsInGroupResponseItem
@@ -113,6 +125,16 @@ type UpdateRefreshScheduleInGroupRequestValue struct {
 	Times           *[]string `json:"times,omitempty"`
 	LocalTimeZoneID *string   `json:"localTimeZoneId,omitempty"`
 	NotifyOption    *string   `json:"notifyOption,omitempty"`
+}
+
+// GetDatasetInGroup returns a dataset within the specified group.
+func (client *Client) GetDatasetInGroup(groupID string, datasetID string) (*GetDatasetInGroupResponse, error) {
+
+	var respObj GetDatasetInGroupResponse
+	url := fmt.Sprintf("https://api.powerbi.com/v1.0/myorg/groups/%s/datasets/%s", url.PathEscape(groupID), url.PathEscape(datasetID))
+	err := client.doJSON("GET", url, nil, &respObj)
+
+	return &respObj, err
 }
 
 // GetDatasetsInGroup returns a list of datasets within the specified group.
