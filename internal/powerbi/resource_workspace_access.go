@@ -112,7 +112,7 @@ func readGroupUser(d *schema.ResourceData, meta interface{}) error {
 
 	if groupID == "" {
 		workspace = strings.SplitN(d.Id(), "/", 2)[0]
-		workspaceObj, err := client.GetGroupbyName(workspace)
+		workspaceObj, err := client.GetGroupByName(workspace)
 		if err != nil {
 			return err
 		}
@@ -160,7 +160,7 @@ func updateGroupUser(d *schema.ResourceData, meta interface{}) error {
 
 	if groupID == "" {
 		workspace = strings.SplitN(d.Id(), "/", 2)[0]
-		workspaceObj, err := client.GetGroupbyName(workspace)
+		workspaceObj, err := client.GetGroupByName(workspace)
 		if err != nil {
 			return err
 		}
@@ -194,7 +194,7 @@ func deleteGroupUser(d *schema.ResourceData, meta interface{}) error {
 
 	if groupID == "" {
 		workspace = strings.SplitN(d.Id(), "/", 2)[0]
-		workspaceObj, err := client.GetGroupbyName(workspace)
+		workspaceObj, err := client.GetGroupByName(workspace)
 		if err != nil {
 			return err
 		}

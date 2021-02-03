@@ -50,6 +50,10 @@ func Provider() *schema.Provider {
 			"powerbi_workspace_access": ResourceGroupUsers(),
 		},
 
+		DataSourcesMap: map[string]*schema.Resource{
+			"powerbi_workspace": DataSourceWorkspace(),
+		},
+
 		ConfigureFunc: providerConfigure,
 	}
 }

@@ -23,29 +23,56 @@ type nestedObjectProperty struct {
 
 // PopulateTerraformDocs update template fields inline in files in the folderpath
 func PopulateTerraformDocs(folderpath string, providerName string, provider *schema.Provider) error {
-	err := filepath.Walk(folderpath, func(path string, info os.FileInfo, err error) error {
+
+	// populate index documents
+	indexMatches, err := filepath.Glob(filepath.Join(folderpath, "index.*"))
+	if err != nil {
+		return err
+	}
+	for _, indexMatch := range indexMatches {
+		populateProviderDoc(indexMatch, provider)
+	}
+
+	// populate resource documents
+	err = filepath.Walk(filepath.Join(folderpath, "resources"), func(path string, info os.FileInfo, err error) error {
 		if info.IsDir() {
 			return nil
 		}
 		fileName := info.Name()
 		fileNameWithoutExtension := fileName[0:strings.LastIndex(fileName, ".")]
 
-		if fileNameWithoutExtension == "index" {
-			populateProviderDoc(path, provider)
-		}
 		for resourceName, resourceValue := range provider.ResourcesMap {
 			resourceNameWithoutProvider := resourceName[strings.Index(resourceName, "_")+1:]
 			if resourceNameWithoutProvider == fileNameWithoutExtension || resourceName == fileNameWithoutExtension {
 				populateResourceDoc(path, resourceValue)
 			}
 		}
-
 		return nil
-
 	})
 	if err != nil {
-		return nil
+		return err
 	}
+
+	// populate data source documents
+	err = filepath.Walk(filepath.Join(folderpath, "data-sources"), func(path string, info os.FileInfo, err error) error {
+		if info.IsDir() {
+			return nil
+		}
+		fileName := info.Name()
+		fileNameWithoutExtension := fileName[0:strings.LastIndex(fileName, ".")]
+
+		for dataSourceName, dataSourceValue := range provider.DataSourcesMap {
+			dataSourceNameWithoutProvider := dataSourceName[strings.Index(dataSourceName, "_")+1:]
+			if dataSourceNameWithoutProvider == fileNameWithoutExtension || dataSourceName == fileNameWithoutExtension {
+				populateResourceDoc(path, dataSourceValue)
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 

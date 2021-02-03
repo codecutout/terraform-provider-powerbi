@@ -124,8 +124,8 @@ func (client *Client) GetGroup(groupID string) (*GetGroupResponse, error) {
 	}, nil
 }
 
-// GetGroupbyName returns a single workspace
-func (client *Client) GetGroupbyName(groupName string) (*GetGroupResponse, error) {
+// GetGroupByName returns a single workspace
+func (client *Client) GetGroupByName(groupName string) (*GetGroupResponse, error) {
 
 	// There is no endpoint to get a single workspace, so we will search for
 	// all workspaces with a specific name
@@ -144,6 +144,7 @@ func (client *Client) GetGroupbyName(groupName string) (*GetGroupResponse, error
 		ID:                    singleGroup.ID,
 		IsOnDedicatedCapacity: singleGroup.IsOnDedicatedCapacity,
 		Name:                  singleGroup.Name,
+		CapacityID:            singleGroup.CapacityID,
 	}, nil
 }
 
