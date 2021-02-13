@@ -107,7 +107,7 @@ The majority of tests in the provider are Acceptance Tests - which provisions re
 
 ### Running with Terraform on Windows
 - Run `go build` - This will build and deploy `terraform-provider-powerbi.exe`
-- Run `mkdir %APPDATA%\terraform.d\plugins\local.dev\codecutout\powerbi\0.1\windows_amd64` to privison a [locally available provider namespace](https://www.terraform.io/docs/language/providers/requirements.html#in-house-providers)
+- Run `mkdir %APPDATA%\terraform.d\plugins\local.dev\codecutout\powerbi\0.1\windows_amd64` to provison a [locally available provider namespace](https://www.terraform.io/docs/language/providers/requirements.html#in-house-providers)
 - Move the binary to the local namespace: `move terraform-provider-powerbi.exe %APPDATA%\terraform.d\plugins\local.dev\codecutout\powerbi\0.1\windows_amd64`
 - Use the custom build provider from Terraform:
 ```terraform
