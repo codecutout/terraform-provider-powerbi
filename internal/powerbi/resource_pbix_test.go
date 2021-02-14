@@ -7,6 +7,7 @@ import (
 	"math/rand"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"testing"
 	"time"
@@ -81,6 +82,103 @@ func TestAccPBIX_basic(t *testing.T) {
 					resource.TestCheckResourceAttrSet("powerbi_pbix.test", "report_id"),
 					resource.TestCheckResourceAttr("powerbi_pbix.test", "name", "Acceptance Test PBIX"),
 				),
+			},
+			// deletes the resource
+			{
+				Config: fmt.Sprintf(`
+				resource "powerbi_workspace" "test" {
+					name = "Acceptance Test Workspace %s"
+				}
+				`, workspaceSuffix),
+				Check: resource.ComposeTestCheckFunc(
+					testCheckDatasetDoesNotExistsInWorkspace("powerbi_workspace.test", "Acceptance Test PBIX"),
+					testCheckReportDoesNotExistsInWorkspace("powerbi_workspace.test", "Acceptance Test PBIX"),
+					testCheckResourceRemoved("powerbi_pbix.test"),
+				),
+			},
+		},
+	})
+}
+
+func TestAccPBIX_external_dataset_report(t *testing.T) {
+	pbixLocation := TempFileName("", ".pbix")
+	pbixLocationTfFriendly := strings.ReplaceAll(pbixLocation, "\\", "\\\\")
+	workspaceSuffix := acctest.RandString(6)
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckPowerbiWorkspaceDestroy,
+		Steps: []resource.TestStep{
+			// first step creates the resource
+			{
+				PreConfig: func() {
+					Copy("./resource_pbix_test_sample3.pbix", pbixLocation)
+				},
+				Config: fmt.Sprintf(`
+				resource "powerbi_workspace" "test" {
+					name = "Acceptance Test Workspace %s"
+				}
+
+				resource "powerbi_pbix" "test" {
+					workspace_id = "${powerbi_workspace.test.id}"
+					name = "Acceptance Test PBIX"
+					source = "%s"
+					source_hash = "${filemd5("%s")}"
+				}
+				`, workspaceSuffix, pbixLocationTfFriendly, pbixLocationTfFriendly),
+				Check: resource.ComposeTestCheckFunc(
+					testCheckDatasetDoesNotExistsInWorkspace("powerbi_workspace.test", "Acceptance Test PBIX"),
+					testCheckReportExistsInWorkspace("powerbi_workspace.test", "Acceptance Test PBIX"),
+					testCheckResourceAttrNotSet("powerbi_workspace.test", "dataset_id"),
+				),
+			},
+			// Attempt to set parameters
+			{
+				PreConfig: func() {
+					Copy("./resource_pbix_test_sample3.pbix", pbixLocation)
+				},
+				Config: fmt.Sprintf(`
+				resource "powerbi_workspace" "test" {
+					name = "Acceptance Test Workspace %s"
+				}
+
+				resource "powerbi_pbix" "test" {
+					workspace_id = "${powerbi_workspace.test.id}"
+					name = "Acceptance Test PBIX"
+					source = "%s"
+					source_hash = "${filemd5("%s")}"
+					parameter {
+						name = "ParamOne"
+						value = "NewParamValueOne"
+					}
+				}
+				`, workspaceSuffix, pbixLocationTfFriendly, pbixLocationTfFriendly),
+				ExpectError: regexp.MustCompile("Unable to update parameters on a PBIX file that does not contain a dataset"),
+			},
+			// Attempt to set datasources
+			{
+				PreConfig: func() {
+					Copy("./resource_pbix_test_sample3.pbix", pbixLocation)
+				},
+				Config: fmt.Sprintf(`
+				resource "powerbi_workspace" "test" {
+					name = "Acceptance Test Workspace %s"
+				}
+
+				resource "powerbi_pbix" "test" {
+					workspace_id = "${powerbi_workspace.test.id}"
+					name = "Acceptance Test PBIX"
+					source = "%s"
+					source_hash = "${filemd5("%s")}"
+					datasource {
+						type = "OData"
+						url = "https://services.odata.org/V3/(S(kbiqo1qkby04vnobw0li0fcp))/OData/OData.svc"
+						original_url = "https://services.odata.org/V3/OData/OData.svc"
+					}
+				}
+				`, workspaceSuffix, pbixLocationTfFriendly, pbixLocationTfFriendly),
+				ExpectError: regexp.MustCompile("Unable to update datasources on a PBIX file that does not contain a dataset"),
 			},
 			// deletes the resource
 			{
@@ -471,6 +569,22 @@ func testCheckReportDoesNotExistsInWorkspace(workspaceResourceName string, expec
 				return fmt.Errorf("Expecting report to not exist in workspace %v. Found report %v", groupID, report.Name)
 			}
 		}
+		return nil
+	}
+}
+
+func testCheckResourceAttrNotSet(name string, key string) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		rs, ok := s.RootModule().Resources[name]
+		if !ok {
+			return fmt.Errorf("resource not found: %s", name)
+		}
+
+		propVal, ok := rs.Primary.Attributes[key]
+		if ok {
+			return fmt.Errorf("Expected property %s to not be set. Found property %s with value %s", key, key, propVal)
+		}
+
 		return nil
 	}
 }

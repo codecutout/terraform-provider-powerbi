@@ -1,6 +1,7 @@
 package powerbi
 
 import (
+	"fmt"
 	"io"
 	"os"
 	"time"
@@ -230,14 +231,14 @@ func deletePBIX(d *schema.ResourceData, meta interface{}) error {
 
 	groupID := d.Get("workspace_id").(string)
 
-	if reportID := d.Get("report_id"); reportID != nil {
+	if reportID := d.Get("report_id"); reportID != nil && reportID != "" {
 		err := client.DeleteReportInGroup(groupID, reportID.(string))
 		if err != nil {
 			return err
 		}
 	}
 
-	if datasetID := d.Get("dataset_id"); datasetID != nil {
+	if datasetID := d.Get("dataset_id"); datasetID != nil && datasetID != "" {
 		err := client.DeleteDatasetInGroup(groupID, datasetID.(string))
 		if err != nil {
 			return err
@@ -303,11 +304,16 @@ func setPBIXParameters(d *schema.ResourceData, meta interface{}) error {
 
 	client := meta.(*powerbiapi.Client)
 	parameter := d.Get("parameter").(*schema.Set)
-	datasetID := d.Get("dataset_id").(string)
+	datasetID, datasetOk := d.GetOk("dataset_id")
 	groupID := d.Get("workspace_id").(string)
 	if parameter != nil {
 		parameterList := parameter.List()
 		if len(parameterList) > 0 {
+
+			if !datasetOk {
+				return fmt.Errorf("Unable to update parameters on a PBIX file that does not contain a dataset")
+			}
+
 			updateParameterRequest := powerbiapi.UpdateParametersInGroupRequest{}
 			for _, parameterObj := range parameterList {
 				parameterObj := parameterObj.(map[string]interface{})
@@ -316,7 +322,8 @@ func setPBIXParameters(d *schema.ResourceData, meta interface{}) error {
 					NewValue: parameterObj["value"].(string),
 				})
 			}
-			err := client.UpdateParametersInGroup(groupID, datasetID, updateParameterRequest)
+
+			err := client.UpdateParametersInGroup(groupID, datasetID.(string), updateParameterRequest)
 			if err != nil {
 				return err
 			}
@@ -332,11 +339,16 @@ func readPBIXParameters(d *schema.ResourceData, meta interface{}) error {
 
 	client := meta.(*powerbiapi.Client)
 
-	datasetID := d.Get("dataset_id").(string)
 	groupID := d.Get("workspace_id").(string)
+	datasetID, datasetOK := d.GetOk("dataset_id")
 	stateParameters := d.Get("parameter").(*schema.Set)
 
-	apiParameters, err := client.GetParametersInGroup(groupID, datasetID)
+	// some pbix do not have datasets, and therefore not all have parameters
+	if !datasetOK {
+		return nil
+	}
+
+	apiParameters, err := client.GetParametersInGroup(groupID, datasetID.(string))
 	if err != nil {
 		return err
 	}
@@ -359,12 +371,17 @@ func setPBIXDatasources(d *schema.ResourceData, meta interface{}) error {
 
 	client := meta.(*powerbiapi.Client)
 	datasources := d.Get("datasource").(*schema.Set)
-	datasetID := d.Get("dataset_id").(string)
+	datasetID, datasetOk := d.GetOk("dataset_id")
 	groupID := d.Get("workspace_id").(string)
 
 	if datasources != nil {
 		datasourceList := datasources.List()
 		if len(datasourceList) > 0 {
+
+			if !datasetOk {
+				return fmt.Errorf("Unable to update datasources on a PBIX file that does not contain a dataset")
+			}
+
 			updateDatasourcesRequest := powerbiapi.UpdateDatasourcesInGroupRequest{}
 			for _, datasourceObj := range datasourceList {
 				datasourceObj := datasourceObj.(map[string]interface{})
@@ -384,7 +401,8 @@ func setPBIXDatasources(d *schema.ResourceData, meta interface{}) error {
 					},
 				})
 			}
-			err := client.UpdateDatasourcesInGroup(groupID, datasetID, updateDatasourcesRequest)
+
+			err := client.UpdateDatasourcesInGroup(groupID, datasetID.(string), updateDatasourcesRequest)
 			if err != nil {
 				return err
 			}
@@ -400,11 +418,16 @@ func readPBIXDatasources(d *schema.ResourceData, meta interface{}) error {
 
 	client := meta.(*powerbiapi.Client)
 
-	datasetID := d.Get("dataset_id").(string)
+	datasetID, datasetOk := d.GetOk("dataset_id")
 	groupID := d.Get("workspace_id").(string)
 	stateDatasources := d.Get("datasource").(*schema.Set)
 
-	apiDatasources, err := client.GetDatasourcesInGroup(groupID, datasetID)
+	// some pbix do not have datasets, and therefore not all have datasources
+	if !datasetOk {
+		return nil
+	}
+
+	apiDatasources, err := client.GetDatasourcesInGroup(groupID, datasetID.(string))
 	if err != nil {
 		return err
 	}
