@@ -12,6 +12,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/codecutout/terraform-provider-powerbi/internal/pbixrewriter"
 	"github.com/codecutout/terraform-provider-powerbi/internal/powerbiapi"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
@@ -56,7 +57,7 @@ func TestAccPBIX_basic(t *testing.T) {
 					resource.TestCheckResourceAttr("powerbi_pbix.test", "name", "Acceptance Test PBIX"),
 				),
 			},
-			// update wtih different pbix same path
+			// update with different pbix same path
 			{
 				PreConfig: func() {
 					Copy("./resource_pbix_test_sample2.pbix", pbixLocation)
@@ -101,51 +102,96 @@ func TestAccPBIX_basic(t *testing.T) {
 }
 
 func TestAccPBIX_external_dataset_report(t *testing.T) {
-	pbixLocation := TempFileName("", ".pbix")
-	pbixLocationTfFriendly := strings.ReplaceAll(pbixLocation, "\\", "\\\\")
+	datasetPbixLocation := TempFileName("", ".pbix")
+	datasetPbixLocationTfFriendly := strings.ReplaceAll(datasetPbixLocation, "\\", "\\\\")
+
+	reportPbixLocation := TempFileName("", ".pbix")
+	reportPbixLocationTfFriendly := strings.ReplaceAll(reportPbixLocation, "\\", "\\\\")
+
 	workspaceSuffix := acctest.RandString(6)
+	var datasetID string
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckPowerbiWorkspaceDestroy,
 		Steps: []resource.TestStep{
-			// first step creates the resource
+			// first step create a dataset
 			{
 				PreConfig: func() {
-					Copy("./resource_pbix_test_sample3.pbix", pbixLocation)
+					Copy("./resource_pbix_dataset_only.pbix", datasetPbixLocation)
 				},
 				Config: fmt.Sprintf(`
 				resource "powerbi_workspace" "test" {
 					name = "Acceptance Test Workspace %s"
 				}
 
-				resource "powerbi_pbix" "test" {
+				resource "powerbi_pbix" "dataset_only" {
 					workspace_id = "${powerbi_workspace.test.id}"
-					name = "Acceptance Test PBIX"
+					name = "Acceptance Test dataset PBIX"
+					source = "%s"
+					source_hash = "${filemd5("%s")}"
+					skip_report = true
+				}
+				`, workspaceSuffix, datasetPbixLocationTfFriendly, datasetPbixLocationTfFriendly),
+				Check: resource.ComposeTestCheckFunc(
+					testCheckDatasetExistsInWorkspace("powerbi_workspace.test", "Acceptance Test dataset PBIX"),
+					testCheckReportDoesNotExistsInWorkspace("powerbi_workspace.test", "Acceptance Test dataset PBIX"),
+					set("powerbi_pbix.dataset_only", "dataset_id", &datasetID),
+				),
+			},
+			// second step creates a report that links to the dataset
+			{
+				PreConfig: func() {
+					// Will do rewrite our pbix so it points to the dataset
+					pbixrewriter.RewritePbixFiles("./resource_pbix_report_only.pbix", reportPbixLocation, []pbixrewriter.PipelineFunc{
+						pbixrewriter.SetDatasetIDPipelineFunc(datasetID),
+					})
+				},
+				Config: fmt.Sprintf(`
+				resource "powerbi_workspace" "test" {
+					name = "Acceptance Test Workspace %s"
+				}
+
+				resource "powerbi_pbix" "dataset_only" {
+					workspace_id = "${powerbi_workspace.test.id}"
+					name = "Acceptance Test dataset PBIX"
+					source = "%s"
+					source_hash = "${filemd5("%s")}"
+					skip_report = true
+				}
+
+				resource "powerbi_pbix" "report_only" {
+					workspace_id = "${powerbi_workspace.test.id}"
+					name = "Acceptance Test report PBIX"
 					source = "%s"
 					source_hash = "${filemd5("%s")}"
 				}
-				`, workspaceSuffix, pbixLocationTfFriendly, pbixLocationTfFriendly),
+				`, workspaceSuffix, datasetPbixLocationTfFriendly, datasetPbixLocationTfFriendly, reportPbixLocationTfFriendly, reportPbixLocationTfFriendly),
 				Check: resource.ComposeTestCheckFunc(
-					testCheckDatasetDoesNotExistsInWorkspace("powerbi_workspace.test", "Acceptance Test PBIX"),
-					testCheckReportExistsInWorkspace("powerbi_workspace.test", "Acceptance Test PBIX"),
-					testCheckResourceAttrNotSet("powerbi_workspace.test", "dataset_id"),
+					testCheckDatasetDoesNotExistsInWorkspace("powerbi_workspace.test", "Acceptance Test report PBIX"),
+					testCheckReportExistsInWorkspace("powerbi_workspace.test", "Acceptance Test report PBIX"),
+					testCheckResourceAttrNotSet("powerbi_pbix.report_only", "dataset_id"),
 				),
 			},
 			// Attempt to set parameters
 			{
-				PreConfig: func() {
-					Copy("./resource_pbix_test_sample3.pbix", pbixLocation)
-				},
 				Config: fmt.Sprintf(`
 				resource "powerbi_workspace" "test" {
 					name = "Acceptance Test Workspace %s"
 				}
 
-				resource "powerbi_pbix" "test" {
+				resource "powerbi_pbix" "dataset_only" {
 					workspace_id = "${powerbi_workspace.test.id}"
-					name = "Acceptance Test PBIX"
+					name = "Acceptance Test dataset PBIX"
+					source = "%s"
+					source_hash = "${filemd5("%s")}"
+					skip_report = true
+				}
+
+				resource "powerbi_pbix" "report_only" {
+					workspace_id = "${powerbi_workspace.test.id}"
+					name = "Acceptance Test report PBIX"
 					source = "%s"
 					source_hash = "${filemd5("%s")}"
 					parameter {
@@ -153,22 +199,27 @@ func TestAccPBIX_external_dataset_report(t *testing.T) {
 						value = "NewParamValueOne"
 					}
 				}
-				`, workspaceSuffix, pbixLocationTfFriendly, pbixLocationTfFriendly),
+				`, workspaceSuffix, datasetPbixLocationTfFriendly, datasetPbixLocationTfFriendly, reportPbixLocationTfFriendly, reportPbixLocationTfFriendly),
 				ExpectError: regexp.MustCompile("Unable to update parameters on a PBIX file that does not contain a dataset"),
 			},
 			// Attempt to set datasources
 			{
-				PreConfig: func() {
-					Copy("./resource_pbix_test_sample3.pbix", pbixLocation)
-				},
 				Config: fmt.Sprintf(`
 				resource "powerbi_workspace" "test" {
 					name = "Acceptance Test Workspace %s"
 				}
 
-				resource "powerbi_pbix" "test" {
+				resource "powerbi_pbix" "dataset_only" {
 					workspace_id = "${powerbi_workspace.test.id}"
-					name = "Acceptance Test PBIX"
+					name = "Acceptance Test dataset PBIX"
+					source = "%s"
+					source_hash = "${filemd5("%s")}"
+					skip_report = true
+				}
+
+				resource "powerbi_pbix" "report_only" {
+					workspace_id = "${powerbi_workspace.test.id}"
+					name = "Acceptance Test report PBIX"
 					source = "%s"
 					source_hash = "${filemd5("%s")}"
 					datasource {
@@ -177,7 +228,7 @@ func TestAccPBIX_external_dataset_report(t *testing.T) {
 						original_url = "https://services.odata.org/V3/OData/OData.svc"
 					}
 				}
-				`, workspaceSuffix, pbixLocationTfFriendly, pbixLocationTfFriendly),
+				`, workspaceSuffix, datasetPbixLocationTfFriendly, datasetPbixLocationTfFriendly, reportPbixLocationTfFriendly, reportPbixLocationTfFriendly),
 				ExpectError: regexp.MustCompile("Unable to update datasources on a PBIX file that does not contain a dataset"),
 			},
 			// deletes the resource

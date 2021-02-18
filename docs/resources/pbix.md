@@ -49,6 +49,7 @@ resource "powerbi_pbix" "mypbix" {
 * `source` - (Required) An absolute path to a PBIX file on the local system.
 * `datasource` - (Optional) Datasources to be reconfigured after deploying the PBIX dataset. Changing this value will require reuploading the PBIX. Any datasource updated will not be tracked. A [`datasource`](#a-datasource-block-supports-the-following) block is defined below.
 * `parameter` - (Optional) Parameters to be configured on the PBIX dataset. These can be updated without requiring reuploading the PBIX. Any parameters not mentioned will not be tracked or updated. A [`parameter`](#a-parameter-block-supports-the-following) block is defined below.
+* `skip_report` - (Optional, Default: `false`) If true only the PBIX dataset is deployed.
 * `source_hash` - (Optional) Used to trigger updates. The only meaningful value is `${filemd5("path/to/file")}`.
 
 ---

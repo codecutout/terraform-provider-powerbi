@@ -44,6 +44,12 @@ func ResourcePBIX() *schema.Resource {
 				Description: "Used to trigger updates. The only meaningful value is `${filemd5(\"path/to/file\")}`.",
 				Optional:    true,
 			},
+			"skip_report": {
+				Type:        schema.TypeBool,
+				Description: "If true only the PBIX dataset is deployed.",
+				Optional:    true,
+				Default:     false,
+			},
 			"report_id": {
 				Type:        schema.TypeString,
 				Description: "The ID for the report that was deployed as part of the PBIX.",
@@ -260,6 +266,7 @@ func createImport(d *schema.ResourceData, meta interface{}) error {
 		d.Get("workspace_id").(string),
 		d.Get("name").(string),
 		"CreateOrOverwrite",
+		d.Get("skip_report").(bool),
 		reader,
 	)
 	if err != nil {
