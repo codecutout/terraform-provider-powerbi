@@ -75,8 +75,8 @@ type GetImportsInGroupResponseItemReport struct {
 	WebURL     string
 }
 
-// PostImportInGroup creates an import wihtin the the specified group
-func (client *Client) PostImportInGroup(groupID string, datasetDisplayName string, nameConflict string, requestData io.Reader) (*PostImportInGroupResponse, error) {
+// PostImportInGroup creates an import within the the specified group
+func (client *Client) PostImportInGroup(groupID string, datasetDisplayName string, nameConflict string, skipReport bool, requestData io.Reader) (*PostImportInGroupResponse, error) {
 
 	queryParams := url.Values{}
 	if datasetDisplayName != "" {
@@ -84,6 +84,9 @@ func (client *Client) PostImportInGroup(groupID string, datasetDisplayName strin
 	}
 	if nameConflict != "" {
 		queryParams.Add("nameConflict", nameConflict)
+	}
+	if skipReport {
+		queryParams.Add("skipReport", "true")
 	}
 
 	var respObj PostImportInGroupResponse
