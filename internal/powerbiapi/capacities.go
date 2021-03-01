@@ -27,9 +27,7 @@ type GetCapacitiesResponseItem struct {
 }
 
 //CapacityAdmins represents the list of capacity admins.
-type CapacityAdmins struct {
-	string
-}
+type CapacityAdmins string
 
 // GroupAssignToCapacity assigns capcity to a workspace
 func (client *Client) GroupAssignToCapacity(groupID string, request GroupAssignToCapacityRequest) error {
