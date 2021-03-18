@@ -5,6 +5,7 @@
 ## Example Usage
 ```hcl
 resource "powerbi_refresh_schedule" "test" {
+  workspace_id       = powerbi_workspace.myworkspace.id
   dataset_id         = powerbi_pbix.test.dataset_id
   enabled            = true
   days               = ["Monday", "Wednesday", "Friday"]
