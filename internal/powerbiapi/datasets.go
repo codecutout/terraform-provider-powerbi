@@ -212,3 +212,12 @@ func (client *Client) UpdateRefreshScheduleInGroup(groupID string, datasetID str
 
 	return err
 }
+
+// TakeOverInGroup Transfers ownership over the specified dataset to the current authorized user.
+func (client *Client) TakeOverInGroup(groupID string, datasetID string) error {
+
+	url := fmt.Sprintf("https://api.powerbi.com/v1.0/myorg/groups/%s/datasets/%s/Default.TakeOver", url.PathEscape(groupID), url.PathEscape(datasetID))
+	err := client.doJSON("POST", url, nil, nil)
+
+	return err
+}
