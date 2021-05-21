@@ -321,6 +321,11 @@ func setPBIXParameters(d *schema.ResourceData, meta interface{}) error {
 				return fmt.Errorf("Unable to update parameters on a PBIX file that does not contain a dataset")
 			}
 
+			err := client.TakeOverInGroup(groupID,datasetID.(string))
+			if err != nil {
+				return err
+			}
+
 			updateParameterRequest := powerbiapi.UpdateParametersInGroupRequest{}
 			for _, parameterObj := range parameterList {
 				parameterObj := parameterObj.(map[string]interface{})
