@@ -56,9 +56,9 @@ jobs:
 
         # list whatever Terraform versions here you would like to support
         terraform:
-          - '0.12.29'
-          - '0.13.4'
-          - '0.14.6'
+          - '0.14.11'
+          - '0.15.5'
+          - '1.0.3'
 
         # list to determine different auth options. Contains only secret name as cant reference secrets directly here
         authsecrets:
