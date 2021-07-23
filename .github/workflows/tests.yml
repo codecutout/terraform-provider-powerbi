@@ -48,7 +48,6 @@ jobs:
     name: Acceptance Tests - terraform v${{matrix.terraform}} - auth with ${{matrix.authsecrets.name}}
     needs: build
     runs-on: ubuntu-latest
-    timeout-minutes: 15
     strategy:
       fail-fast: false
       max-parallel: 2 #limits on the PowerBI API can Too Many Request errors in the tests
@@ -56,7 +55,6 @@ jobs:
 
         # list whatever Terraform versions here you would like to support
         terraform:
-          - '0.14.11'
           - '0.15.5'
           - '1.0.3'
 
@@ -94,7 +92,6 @@ jobs:
         go mod download
         
     - name: TF acceptance tests
-      timeout-minutes: 10
       env:
         TF_ACC: "1"
         TF_ACC_TERRAFORM_VERSION: ${{ matrix.terraform }}
