@@ -1,13 +1,14 @@
 package powerbi
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
 	"github.com/codecutout/terraform-provider-powerbi/internal/powerbiapi"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/acctest"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/terraform"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
 func TestAccDataSourceWorkspace_basic(t *testing.T) {
@@ -15,7 +16,7 @@ func TestAccDataSourceWorkspace_basic(t *testing.T) {
 	var workspaceName = fmt.Sprintf("Acceptance Test Data Source Workspace %s - Basic", workspaceSuffix)
 
 	provider := Provider()
-	provider.Configure(terraform.NewResourceConfigRaw(nil))
+	provider.Configure(context.TODO(), terraform.NewResourceConfigRaw(nil))
 	client := provider.Meta().(*powerbiapi.Client)
 	response, _ := client.CreateGroup(powerbiapi.CreateGroupRequest{
 		Name: workspaceName,

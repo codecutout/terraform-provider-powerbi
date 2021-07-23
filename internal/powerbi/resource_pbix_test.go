@@ -14,9 +14,9 @@ import (
 
 	"github.com/codecutout/terraform-provider-powerbi/internal/pbixrewriter"
 	"github.com/codecutout/terraform-provider-powerbi/internal/powerbiapi"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/acctest"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/terraform"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
 func TestAccPBIX_basic(t *testing.T) {
@@ -253,6 +253,8 @@ func TestAccPBIX_parameters(t *testing.T) {
 	var datasetID string
 	var groupID string
 	workspaceSuffix := acctest.RandString(6)
+	pbixLocation := TempFileName("", ".pbix")
+	pbixLocationTfFriendly := strings.ReplaceAll(pbixLocation, "\\", "\\\\")
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -261,6 +263,9 @@ func TestAccPBIX_parameters(t *testing.T) {
 		Steps: []resource.TestStep{
 			// first step creates the pbix with parameters
 			{
+				PreConfig: func() {
+					Copy("./resource_pbix_test_sample1.pbix", pbixLocation)
+				},
 				Config: fmt.Sprintf(`
 				resource "powerbi_workspace" "test" {
 					name = "Acceptance Test Workspace %s"
@@ -269,14 +274,14 @@ func TestAccPBIX_parameters(t *testing.T) {
 				resource "powerbi_pbix" "test" {
 					workspace_id = "${powerbi_workspace.test.id}"
 					name = "Acceptance Test PBIX"
-					source = "./resource_pbix_test_sample1.pbix"
-					source_hash = "${filemd5("./resource_pbix_test_sample1.pbix")}"
+					source = "%s"
+					source_hash = "${filemd5("%s")}"
 					parameter {
 						name = "ParamOne"
 						value = "NewParamValueOne"
 					}
 				}
-				`, workspaceSuffix),
+				`, workspaceSuffix, pbixLocationTfFriendly, pbixLocationTfFriendly),
 				Check: resource.ComposeTestCheckFunc(
 					set("powerbi_pbix.test", "dataset_id", &datasetID),
 					set("powerbi_pbix.test", "workspace_id", &groupID),
@@ -310,14 +315,14 @@ func TestAccPBIX_parameters(t *testing.T) {
 				resource "powerbi_pbix" "test" {
 					workspace_id = "${powerbi_workspace.test.id}"
 					name = "Acceptance Test PBIX"
-					source = "./resource_pbix_test_sample1.pbix"
-					source_hash = "${filemd5("./resource_pbix_test_sample1.pbix")}"
+					source = "%s"
+					source_hash = "${filemd5("%s")}"
 					parameter {
 						name = "ParamOne"
 						value = "NewParamValueOne"
 					}
 				}
-				`, workspaceSuffix),
+				`, workspaceSuffix, pbixLocationTfFriendly, pbixLocationTfFriendly),
 				Check: resource.ComposeTestCheckFunc(
 					testCheckUpdatedAt("powerbi_pbix.test", &updatedTime), //import should not be updated
 					testCheckParameter("powerbi_pbix.test", "ParamOne", "NewParamValueOne"),
@@ -326,6 +331,9 @@ func TestAccPBIX_parameters(t *testing.T) {
 			},
 			// uploading new file should also update with parameters
 			{
+				PreConfig: func() {
+					Copy("./resource_pbix_test_sample2.pbix", pbixLocation)
+				},
 				Config: fmt.Sprintf(`
 				resource "powerbi_workspace" "test" {
 					name = "Acceptance Test Workspace %s"
@@ -334,14 +342,14 @@ func TestAccPBIX_parameters(t *testing.T) {
 				resource "powerbi_pbix" "test" {
 					workspace_id = "${powerbi_workspace.test.id}"
 					name = "Acceptance Test PBIX"
-					source = "./resource_pbix_test_sample2.pbix"
-					source_hash = "${filemd5("./resource_pbix_test_sample1.pbix")}"
+					source = "%s"
+					source_hash = "${filemd5("%s")}"
 					parameter {
 						name = "ParamOne"
 						value = "NewParamValueOne"
 					}
 				}
-				`, workspaceSuffix),
+				`, workspaceSuffix, pbixLocationTfFriendly, pbixLocationTfFriendly),
 				Check: resource.ComposeTestCheckFunc(
 					testCheckUpdatedAfter("powerbi_pbix.test", &updatedTime),                //import should be updated
 					testCheckParameter("powerbi_pbix.test", "ParamOne", "NewParamValueOne"), //new value maintained
@@ -357,6 +365,8 @@ func TestAccPBIX_datasources(t *testing.T) {
 	var datasetID string
 	var groupID string
 	workspaceSuffix := acctest.RandString(6)
+	pbixLocation := TempFileName("", ".pbix")
+	pbixLocationTfFriendly := strings.ReplaceAll(pbixLocation, "\\", "\\\\")
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -365,6 +375,9 @@ func TestAccPBIX_datasources(t *testing.T) {
 		Steps: []resource.TestStep{
 			// first step creates the pbix with datasource change
 			{
+				PreConfig: func() {
+					Copy("./resource_pbix_test_sample1.pbix", pbixLocation)
+				},
 				Config: fmt.Sprintf(`
 				resource "powerbi_workspace" "test" {
 					name = "Acceptance Test Workspace %s"
@@ -373,15 +386,15 @@ func TestAccPBIX_datasources(t *testing.T) {
 				resource "powerbi_pbix" "test" {
 					workspace_id = "${powerbi_workspace.test.id}"
 					name = "Acceptance Test PBIX"
-					source = "./resource_pbix_test_sample1.pbix"
-					source_hash = "${filemd5("./resource_pbix_test_sample1.pbix")}"
+					source = "%s"
+					source_hash = "${filemd5("%s")}"
 					datasource {
 						type = "OData"
 						url = "https://services.odata.org/V3/(S(kbiqo1qkby04vnobw0li0fcp))/OData/OData.svc"
 						original_url = "https://services.odata.org/V3/OData/OData.svc"
 					}
 				}
-				`, workspaceSuffix),
+				`, workspaceSuffix, pbixLocationTfFriendly, pbixLocationTfFriendly),
 				Check: resource.ComposeTestCheckFunc(
 					set("powerbi_pbix.test", "dataset_id", &datasetID),
 					set("powerbi_pbix.test", "workspace_id", &groupID),
@@ -418,15 +431,15 @@ func TestAccPBIX_datasources(t *testing.T) {
 				resource "powerbi_pbix" "test" {
 					workspace_id = "${powerbi_workspace.test.id}"
 					name = "Acceptance Test PBIX"
-					source = "./resource_pbix_test_sample1.pbix"
-					source_hash = "${filemd5("./resource_pbix_test_sample1.pbix")}"
+					source = "%s"
+					source_hash = "${filemd5("%s")}"
 					datasource {
 						type = "OData"
 						url = "https://services.odata.org/V3/(S(kbiqo1qkby04vnobw0li0fcp))/OData/OData.svc"
 						original_url = "https://services.odata.org/V3/OData/OData.svc"
 					}
 				}
-				`, workspaceSuffix),
+				`, workspaceSuffix, pbixLocationTfFriendly, pbixLocationTfFriendly),
 				Check: resource.ComposeTestCheckFunc(
 					testCheckUpdatedAfter("powerbi_pbix.test", &updatedTime), //import should be updated
 					testCheckURLDatasource("powerbi_pbix.test", "https://services.odata.org/V3/(S(kbiqo1qkby04vnobw0li0fcp))/OData/OData.svc"),

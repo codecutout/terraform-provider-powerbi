@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/codecutout/terraform-provider-powerbi/internal/powerbiapi"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 // ResourcePBIX represents a Power BI PBIX file
@@ -194,8 +194,6 @@ func readPBIX(d *schema.ResourceData, meta interface{}) error {
 func updatePBIX(d *schema.ResourceData, meta interface{}) error {
 	if d.HasChange("source") || d.HasChange("source_hash") || d.HasChange("datasource") {
 
-		d.Partial(true)
-
 		err := createImport(d, meta)
 		if err != nil {
 			return err
@@ -215,8 +213,6 @@ func updatePBIX(d *schema.ResourceData, meta interface{}) error {
 		if err != nil {
 			return err
 		}
-
-		d.Partial(false)
 
 		return nil
 	}
@@ -274,9 +270,6 @@ func createImport(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	d.SetId(resp.ID)
-	d.SetPartial("workspace_id")
-	d.SetPartial("source")
-	d.SetPartial("source_hash")
 
 	return nil
 }
@@ -291,16 +284,13 @@ func readImport(d *schema.ResourceData, meta interface{}, timeoutForSuccessfulIm
 		return err
 	}
 
-	d.SetPartial("name")
 	d.Set("name", im.Name)
 
 	if len(im.Reports) >= 1 {
-		d.SetPartial("report_id")
 		d.Set("report_id", im.Reports[0].ID)
 	}
 
 	if len(im.Datasets) >= 1 {
-		d.SetPartial("dataset_id")
 		d.Set("dataset_id", im.Datasets[0].ID)
 	}
 
@@ -335,7 +325,6 @@ func setPBIXParameters(d *schema.ResourceData, meta interface{}) error {
 				return err
 			}
 
-			d.SetPartial("parameter")
 			d.Set("parameter", parameter)
 		}
 	}
@@ -369,7 +358,6 @@ func readPBIXParameters(d *schema.ResourceData, meta interface{}) error {
 		}
 	}
 
-	d.SetPartial("parameter")
 	d.Set("parameter", stateParameters)
 	return nil
 }
@@ -414,7 +402,6 @@ func setPBIXDatasources(d *schema.ResourceData, meta interface{}) error {
 				return err
 			}
 
-			d.SetPartial("datasource")
 			d.Set("datasource", datasources)
 		}
 	}
@@ -465,7 +452,6 @@ func readPBIXDatasources(d *schema.ResourceData, meta interface{}) error {
 		}
 	}
 
-	d.SetPartial("datasource")
 	d.Set("datasource", stateDatasources)
 	return nil
 }

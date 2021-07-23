@@ -4,16 +4,19 @@ import (
 	"fmt"
 	"reflect"
 	"regexp"
+	"strings"
 	"testing"
 
 	"github.com/codecutout/terraform-provider-powerbi/internal/powerbiapi"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/acctest"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/terraform"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
 func TestAccRefreshSchedule_basic(t *testing.T) {
 	workspaceSuffix := acctest.RandString(6)
+	pbixLocation := TempFileName("", ".pbix")
+	pbixLocationTfFriendly := strings.ReplaceAll(pbixLocation, "\\", "\\\\")
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -22,6 +25,9 @@ func TestAccRefreshSchedule_basic(t *testing.T) {
 		Steps: []resource.TestStep{
 			// first step creates the resource
 			{
+				PreConfig: func() {
+					Copy("./resource_pbix_test_sample1.pbix", pbixLocation)
+				},
 				Config: fmt.Sprintf(`
 				resource "powerbi_workspace" "test" {
 					name = "Acceptance Test Workspace %s"
@@ -30,8 +36,8 @@ func TestAccRefreshSchedule_basic(t *testing.T) {
 				resource "powerbi_pbix" "test" {
 					workspace_id = "${powerbi_workspace.test.id}"
 					name = "Acceptance Test PBIX"
-					source = "./resource_pbix_test_sample1.pbix"
-					source_hash = "${filemd5("./resource_pbix_test_sample1.pbix")}"
+					source = "%5s"
+					source_hash = "${filemd5("%s")}"
 				}
 
 				resource "powerbi_refresh_schedule" "test" {
@@ -44,7 +50,7 @@ func TestAccRefreshSchedule_basic(t *testing.T) {
 					notify_option = "NoNotification"
 				}
 
-				`, workspaceSuffix),
+				`, workspaceSuffix, pbixLocationTfFriendly, pbixLocationTfFriendly),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("powerbi_refresh_schedule.test", "enabled", "true"),
 					resource.TestCheckResourceAttr("powerbi_refresh_schedule.test", "days.0", "Monday"),
@@ -73,8 +79,8 @@ func TestAccRefreshSchedule_basic(t *testing.T) {
 				resource "powerbi_pbix" "test" {
 					workspace_id = "${powerbi_workspace.test.id}"
 					name = "Acceptance Test PBIX"
-					source = "./resource_pbix_test_sample1.pbix"
-					source_hash = "${filemd5("./resource_pbix_test_sample1.pbix")}"
+					source = "%s"
+					source_hash = "${filemd5("%s")}"
 				}
 
 				resource "powerbi_refresh_schedule" "test" {
@@ -86,7 +92,7 @@ func TestAccRefreshSchedule_basic(t *testing.T) {
 					local_time_zone_id = "UTC" # time zone changed
 					notify_option = "NoNotification"
 				}
-				`, workspaceSuffix),
+				`, workspaceSuffix, pbixLocationTfFriendly, pbixLocationTfFriendly),
 				Check: resource.ComposeTestCheckFunc(
 					testCheckRefreshSchedule("powerbi_refresh_schedule.test", powerbiapi.GetRefreshScheduleInGroupResponse{
 						Enabled:         true,
@@ -107,8 +113,8 @@ func TestAccRefreshSchedule_basic(t *testing.T) {
 				resource "powerbi_pbix" "test" {
 					workspace_id = "${powerbi_workspace.test.id}"
 					name = "Acceptance Test PBIX"
-					source = "./resource_pbix_test_sample1.pbix"
-					source_hash = "${filemd5("./resource_pbix_test_sample1.pbix")}"
+					source = "%s"
+					source_hash = "${filemd5("%s")}"
 				}
 
 				resource "powerbi_refresh_schedule" "test" {
@@ -120,7 +126,7 @@ func TestAccRefreshSchedule_basic(t *testing.T) {
 					local_time_zone_id = "UTC"
 					notify_option = "NoNotification"
 				}
-				`, workspaceSuffix),
+				`, workspaceSuffix, pbixLocationTfFriendly, pbixLocationTfFriendly),
 				Check: resource.ComposeTestCheckFunc(
 					testCheckRefreshSchedule("powerbi_refresh_schedule.test", powerbiapi.GetRefreshScheduleInGroupResponse{
 						Enabled:         false,
@@ -152,7 +158,7 @@ func TestAccRefreshSchedule_validation(t *testing.T) {
 				}
 
 				`,
-				ExpectError: regexp.MustCompile("config is invalid:.*notify_option.*"),
+				ExpectError: regexp.MustCompile(".*notify_option.*not-an-option"),
 			},
 			{
 				Config: `
@@ -198,6 +204,8 @@ func TestAccRefreshSchedule_skew(t *testing.T) {
 	var datasetID string
 	var groupID string
 	workspaceSuffix := acctest.RandString(6)
+	pbixLocation := TempFileName("", ".pbix")
+	pbixLocationTfFriendly := strings.ReplaceAll(pbixLocation, "\\", "\\\\")
 
 	config := fmt.Sprintf(`
 	resource "powerbi_workspace" "test" {
@@ -207,8 +215,8 @@ func TestAccRefreshSchedule_skew(t *testing.T) {
 	resource "powerbi_pbix" "test" {
 		workspace_id = "${powerbi_workspace.test.id}"
 		name = "Acceptance Test PBIX"
-		source = "./resource_pbix_test_sample1.pbix"
-		source_hash = "${filemd5("./resource_pbix_test_sample1.pbix")}"
+		source = "%s"
+		source_hash = "${filemd5("%s")}"
 	}
 
 	resource "powerbi_refresh_schedule" "test" {
@@ -221,7 +229,7 @@ func TestAccRefreshSchedule_skew(t *testing.T) {
 		notify_option = "NoNotification"
 	}
 
-	`, workspaceSuffix)
+	`, workspaceSuffix, pbixLocationTfFriendly, pbixLocationTfFriendly)
 
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
@@ -230,6 +238,9 @@ func TestAccRefreshSchedule_skew(t *testing.T) {
 		Steps: []resource.TestStep{
 			// first creates the resource
 			{
+				PreConfig: func() {
+					Copy("./resource_pbix_test_sample1.pbix", pbixLocation)
+				},
 				Config: config,
 				Check: resource.ComposeTestCheckFunc(
 					set("powerbi_refresh_schedule.test", "dataset_id", &datasetID),

@@ -7,9 +7,9 @@ import (
 	"testing"
 
 	"github.com/codecutout/terraform-provider-powerbi/internal/powerbiapi"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/acctest"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/terraform"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
 func TestAccWorkspaceAccess_basic(t *testing.T) {
@@ -72,7 +72,7 @@ func TestAccWorkspaceAccess_validation(t *testing.T) {
 					principal_type = "User"
 				}
 				`,
-				ExpectError: regexp.MustCompile("config is invalid:.*email_address.*"),
+				ExpectError: regexp.MustCompile(".*email_address.*"),
 			},
 			{
 				Config: `
@@ -82,7 +82,7 @@ func TestAccWorkspaceAccess_validation(t *testing.T) {
 					email_address = "user@mailserver"
 				}
 				`,
-				ExpectError: regexp.MustCompile("config is invalid:.*principal_type.*"),
+				ExpectError: regexp.MustCompile(".*principal_type.*"),
 			},
 			{
 				Config: `
@@ -93,7 +93,7 @@ func TestAccWorkspaceAccess_validation(t *testing.T) {
 					principal_type = "not-valid-type"
 				}
 				`,
-				ExpectError: regexp.MustCompile("config is invalid:.*principal_type.*"),
+				ExpectError: regexp.MustCompile(".*principal_type.*"),
 			},
 			{
 				Config: `
@@ -104,7 +104,7 @@ func TestAccWorkspaceAccess_validation(t *testing.T) {
 					principal_type = "App"
 				}
 				`,
-				ExpectError: regexp.MustCompile("config is invalid:.*group_user_access_right.*"),
+				ExpectError: regexp.MustCompile(".*group_user_access_right.*"),
 			},
 		},
 	})
