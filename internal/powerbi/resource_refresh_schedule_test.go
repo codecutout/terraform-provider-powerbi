@@ -244,7 +244,7 @@ func TestAccRefreshSchedule_skew(t *testing.T) {
 				Config: config,
 				Check: resource.ComposeTestCheckFunc(
 					set("powerbi_refresh_schedule.test", "dataset_id", &datasetID),
-					set("powerbi_refresh_schedule.test", "worksapce_id", &groupID),
+					set("powerbi_refresh_schedule.test", "workspace_id", &groupID),
 				),
 			},
 			// second step skew the resource and checks it gets reupdates it
