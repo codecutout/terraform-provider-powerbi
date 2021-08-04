@@ -1,12 +1,13 @@
 package powerbi
 
 import (
+	"context"
 	"strings"
 
 	"github.com/codecutout/terraform-provider-powerbi/internal/powerbiapi"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/customdiff"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/customdiff"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
 // ResourceDataset represents a Power BI dataset
@@ -18,7 +19,7 @@ func ResourceDataset() *schema.Resource {
 		Delete: deleteDataset,
 
 		CustomizeDiff: customdiff.All(
-			customdiff.ForceNewIfChange("table", func(old, new, meta interface{}) bool {
+			customdiff.ForceNewIfChange("table", func(ctx context.Context, old, new, meta interface{}) bool {
 				// We can update changes to existing tables, but creating new tables
 				// or deleting old tables requires forcing a new dataset to be created
 				oldList := old.(*schema.Set).List()

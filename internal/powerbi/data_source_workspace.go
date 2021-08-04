@@ -2,7 +2,7 @@ package powerbi
 
 import (
 	"github.com/codecutout/terraform-provider-powerbi/internal/powerbiapi"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 // DataSourceWorkspace represents a Power BI workspace

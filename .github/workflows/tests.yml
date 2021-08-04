@@ -29,7 +29,7 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v2.1.3
       with:
-        go-version: '1.15'
+        go-version: '1.16'
       id: go
 
     - name: Check out code into the Go module directory
@@ -48,7 +48,6 @@ jobs:
     name: Acceptance Tests - terraform v${{matrix.terraform}} - auth with ${{matrix.authsecrets.name}}
     needs: build
     runs-on: ubuntu-latest
-    timeout-minutes: 15
     strategy:
       fail-fast: false
       max-parallel: 2 #limits on the PowerBI API can Too Many Request errors in the tests
@@ -56,9 +55,8 @@ jobs:
 
         # list whatever Terraform versions here you would like to support
         terraform:
-          - '0.12.29'
-          - '0.13.4'
-          - '0.14.6'
+          - '0.15.5'
+          - '1.0.3'
 
         # list to determine different auth options. Contains only secret name as cant reference secrets directly here
         authsecrets:
@@ -83,7 +81,7 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v2.1.3
       with:
-        go-version: '1.15'
+        go-version: '1.16'
       id: go
 
     - name: Check out code into the Go module directory
@@ -94,7 +92,6 @@ jobs:
         go mod download
         
     - name: TF acceptance tests
-      timeout-minutes: 10
       env:
         TF_ACC: "1"
         TF_ACC_TERRAFORM_VERSION: ${{ matrix.terraform }}

@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/codecutout/terraform-provider-powerbi/internal/powerbiapi"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 )
 
 // ResourceGroupUsers represents user management in Power BI workspace.
