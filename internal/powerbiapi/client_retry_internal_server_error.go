@@ -20,7 +20,7 @@ func (rt *retryInternalServiceErrorRoundTripper) RoundTrip(req *http.Request) (*
 	resp, err := rt.innerRoundTripper.RoundTrip(req)
 
 retry:
-	for attempts := 1; err == nil && resp.StatusCode == 500; attempts++ {
+	for attempts := 1; err == nil && resp.StatusCode == 500 || resp.StatusCode == 400; attempts++ {
 		switch attempts {
 		case 1:
 			// retry immediately. PowerBI API typically responds successfully on a retry
