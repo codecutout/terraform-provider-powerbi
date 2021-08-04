@@ -50,9 +50,8 @@ func newClient(getAuthToken func(httpClient *http.Client) (string, error)) (*Cli
 			getAuthToken,
 			// error
 			newErrorOnUnsuccessfulRoundTripper(
-				// retry internal server error
-				// this is crazy that we have to do this, but the API intermittently returns internal server errors
-				newRetryInternalServerErrorRoundTripper(
+				// this is crazy we need to retry 500 and 400 errors, but the API intermittently returns them
+				newRetryIntermittentErrorRoundTripper(
 					// retry too many requests
 					newRetryTooManyRequestsRoundTripper(
 						// actual call

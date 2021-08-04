@@ -5,17 +5,17 @@ import (
 	"time"
 )
 
-type retryInternalServiceErrorRoundTripper struct {
+type retryIntermittentErrorRoundTripper struct {
 	innerRoundTripper http.RoundTripper
 }
 
-func newRetryInternalServerErrorRoundTripper(next http.RoundTripper) http.RoundTripper {
-	return &retryInternalServiceErrorRoundTripper{
+func newRetryIntermittentErrorRoundTripper(next http.RoundTripper) http.RoundTripper {
+	return &retryIntermittentErrorRoundTripper{
 		innerRoundTripper: next,
 	}
 }
 
-func (rt *retryInternalServiceErrorRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
+func (rt *retryIntermittentErrorRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
 
 	resp, err := rt.innerRoundTripper.RoundTrip(req)
 
