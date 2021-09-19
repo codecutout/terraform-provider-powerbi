@@ -50,6 +50,12 @@ func ResourcePBIX() *schema.Resource {
 				Optional:    true,
 				Default:     false,
 			},
+			"skip_dataset": {
+				Type:        schema.TypeBool,
+				Description: "If true only the PBIX report is managed by the resource. Only useful if `dataset_id` is provided.",
+				Optional:    true,
+				Default:     false,
+			},
 			"report_id": {
 				Type:        schema.TypeString,
 				Description: "The ID for the report that was deployed as part of the PBIX.",
@@ -161,6 +167,11 @@ func createPBIX(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
+	err = setPBIXDataset(d, meta)
+	if err != nil {
+		return err
+	}
+
 	d.Partial(false)
 
 	return nil
@@ -221,12 +232,18 @@ func updatePBIX(d *schema.ResourceData, meta interface{}) error {
 		return nil
 	}
 
+	if d.HasChange("dataset_id") {
+		err := setPBIXDataset(d, meta)
+		if err != nil {
+			return err
+		}
+	}
+
 	if d.HasChange("parameter") {
 		err := setPBIXParameters(d, meta)
 		if err != nil {
 			return err
 		}
-
 	}
 
 	return nil
@@ -236,6 +253,7 @@ func deletePBIX(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*powerbiapi.Client)
 
 	groupID := d.Get("workspace_id").(string)
+	skipDataset := d.Get("skip_dataset").(bool)
 
 	if reportID := d.Get("report_id"); reportID != nil && reportID != "" {
 		err := client.DeleteReportInGroup(groupID, reportID.(string))
@@ -244,7 +262,7 @@ func deletePBIX(d *schema.ResourceData, meta interface{}) error {
 		}
 	}
 
-	if datasetID := d.Get("dataset_id"); datasetID != nil && datasetID != "" {
+	if datasetID := d.Get("dataset_id"); datasetID != nil && datasetID != "" && !skipDataset {
 		err := client.DeleteDatasetInGroup(groupID, datasetID.(string))
 		if err != nil {
 			return err
@@ -467,5 +485,29 @@ func readPBIXDatasources(d *schema.ResourceData, meta interface{}) error {
 
 	d.SetPartial("datasource")
 	d.Set("datasource", stateDatasources)
+	return nil
+}
+
+func setPBIXDataset(d *schema.ResourceData, meta interface{}) error {
+	client := meta.(*powerbiapi.Client)
+
+	groupID := d.Get("workspace_id").(string)
+	datasetID, datasetOk := d.GetOk("dataset_id")
+	reportID, reportOk := d.GetOk("report_id")
+
+	// only run this if dataset id and request id are available
+	// report is not available if skip_report = true
+	if !datasetOk || !reportOk {
+		return nil
+	}
+
+	err := client.RebindReportInGroup(groupID, reportID.(string), powerbiapi.RebindReportInGroupRequest{
+		DatasetID: datasetID.(string),
+	})
+
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
