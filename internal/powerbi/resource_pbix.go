@@ -46,27 +46,25 @@ func ResourcePBIX() *schema.Resource {
 			},
 			"skip_report": {
 				Type:        schema.TypeBool,
-				Description: "If true only the PBIX dataset is deployed.",
-				Optional:    true,
-				Default:     false,
-			},
-			"skip_dataset": {
-				Type:        schema.TypeBool,
-				Description: "If true only the PBIX report is managed by the resource. Only useful if `dataset_id` is provided.",
+				Description: "If true, only the PBIX dataset is deployed.",
 				Optional:    true,
 				Default:     false,
 			},
 			"report_id": {
 				Type:        schema.TypeString,
 				Description: "The ID for the report that was deployed as part of the PBIX.",
-				Optional:    true,
 				Computed:    true,
 			},
 			"dataset_id": {
 				Type:        schema.TypeString,
 				Description: "The ID for the dataset that was deployed as part of the PBIX.",
-				Optional:    true,
 				Computed:    true,
+			},
+			"rebind_dataset_id": {
+				Type:          schema.TypeString,
+				Description:   "If set, will rebind the report to the the specified dataset ID.",
+				Optional:      true,
+				ConflictsWith: []string{"parameter", "datasource"},
 			},
 			"parameter": {
 				Type:        schema.TypeSet,
@@ -167,9 +165,11 @@ func createPBIX(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
-	err = setPBIXDataset(d, meta)
-	if err != nil {
-		return err
+	if _, ok := d.GetOk("rebind_dataset_id"); ok {
+		err = rebindPBIXDataset(d, meta)
+		if err != nil {
+			return err
+		}
 	}
 
 	d.Partial(false)
@@ -227,13 +227,18 @@ func updatePBIX(d *schema.ResourceData, meta interface{}) error {
 			return err
 		}
 
+		err = rebindPBIXDataset(d, meta)
+		if err != nil {
+			return err
+		}
+
 		d.Partial(false)
 
 		return nil
 	}
 
-	if d.HasChange("dataset_id") {
-		err := setPBIXDataset(d, meta)
+	if d.HasChange("rebind_dataset_id") {
+		err := rebindPBIXDataset(d, meta)
 		if err != nil {
 			return err
 		}
@@ -253,16 +258,15 @@ func deletePBIX(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*powerbiapi.Client)
 
 	groupID := d.Get("workspace_id").(string)
-	skipDataset := d.Get("skip_dataset").(bool)
 
-	if reportID := d.Get("report_id"); reportID != nil && reportID != "" {
+	if reportID, reportIDOk := d.GetOk("report_id"); reportIDOk {
 		err := client.DeleteReportInGroup(groupID, reportID.(string))
 		if err != nil {
 			return err
 		}
 	}
 
-	if datasetID := d.Get("dataset_id"); datasetID != nil && datasetID != "" && !skipDataset {
+	if datasetID, datasetIDOk := d.GetOk("dataset_id"); datasetIDOk {
 		err := client.DeleteDatasetInGroup(groupID, datasetID.(string))
 		if err != nil {
 			return err
@@ -312,16 +316,20 @@ func readImport(d *schema.ResourceData, meta interface{}, timeoutForSuccessfulIm
 	d.SetPartial("name")
 	d.Set("name", im.Name)
 
-	if len(im.Reports) >= 1 {
-		d.SetPartial("report_id")
-		d.Set("report_id", im.Reports[0].ID)
-	}
+	// powerbi imports can be modified by some operations (such as rebind)
+	// in order to keep reference to the original report and original dataset
+	// we will only look them up once after creation
+	if d.IsNewResource() {
+		if len(im.Reports) >= 1 {
+			d.SetPartial("report_id")
+			d.Set("report_id", im.Reports[0].ID)
+		}
 
-	if len(im.Datasets) >= 1 {
-		d.SetPartial("dataset_id")
-		d.Set("dataset_id", im.Datasets[0].ID)
+		if len(im.Datasets) >= 1 {
+			d.SetPartial("dataset_id")
+			d.Set("dataset_id", im.Datasets[0].ID)
+		}
 	}
-
 	return nil
 }
 
@@ -458,7 +466,7 @@ func readPBIXDatasources(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	// Because datasource updates work in "find and replace" kind of semantic, it is
-	// impossible to know track the values of individual datasrouces. However we can
+	// impossible to track the values of individual datasources. However we can
 	// determine if there are no datasource that match our original replacement
 	for _, stateDatasource := range stateDatasources.List() {
 		stateDatasourceObj := stateDatasource.(map[string]interface{})
@@ -488,26 +496,24 @@ func readPBIXDatasources(d *schema.ResourceData, meta interface{}) error {
 	return nil
 }
 
-func setPBIXDataset(d *schema.ResourceData, meta interface{}) error {
+func rebindPBIXDataset(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*powerbiapi.Client)
 
 	groupID := d.Get("workspace_id").(string)
-	datasetID, datasetOk := d.GetOk("dataset_id")
+	rebindDatasetID, rebindDatasetOk := d.GetOk("rebind_dataset_id")
 	reportID, reportOk := d.GetOk("report_id")
 
-	// only run this if dataset id and request id are available
-	// report is not available if skip_report = true
-	if !datasetOk || !reportOk {
+	// if rebind_dataset_id has been removed we will bind back to the original dataset
+	if !rebindDatasetOk {
+		rebindDatasetID, rebindDatasetOk = d.GetOk("dataset_id")
+	}
+
+	// only run this if rebind_dataset_id and report_id are available
+	if !rebindDatasetOk || !reportOk {
 		return nil
 	}
 
-	err := client.RebindReportInGroup(groupID, reportID.(string), powerbiapi.RebindReportInGroupRequest{
-		DatasetID: datasetID.(string),
+	return client.RebindReportInGroup(groupID, reportID.(string), powerbiapi.RebindReportInGroupRequest{
+		DatasetID: rebindDatasetID.(string),
 	})
-
-	if err != nil {
-		return err
-	}
-
-	return nil
 }

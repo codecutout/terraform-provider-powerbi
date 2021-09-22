@@ -239,9 +239,183 @@ func TestAccPBIX_external_dataset_report(t *testing.T) {
 				}
 				`, workspaceSuffix),
 				Check: resource.ComposeTestCheckFunc(
-					testCheckDatasetDoesNotExistsInWorkspace("powerbi_workspace.test", "Acceptance Test PBIX"),
-					testCheckReportDoesNotExistsInWorkspace("powerbi_workspace.test", "Acceptance Test PBIX"),
-					testCheckResourceRemoved("powerbi_pbix.test"),
+					testCheckDatasetDoesNotExistsInWorkspace("powerbi_workspace.test", "Acceptance Test dataset PBIX"),
+
+					testCheckReportDoesNotExistsInWorkspace("powerbi_workspace.test", "Acceptance Test report PBIX"),
+					testCheckDatasetDoesNotExistsInWorkspace("powerbi_workspace.test", "Acceptance Test report PBIX"),
+					testCheckResourceRemoved("powerbi_pbix.dataset_only"),
+					testCheckResourceRemoved("powerbi_pbix.report_only"),
+				),
+			},
+		},
+	})
+}
+
+func TestAccPBIX_rebind_dataset(t *testing.T) {
+	datasetPbixLocation := TempFileName("dataset_", ".pbix")
+	datasetPbixLocationTfFriendly := strings.ReplaceAll(datasetPbixLocation, "\\", "\\\\")
+
+	reportPbixLocation := TempFileName("report_", ".pbix")
+	reportPbixLocationTfFriendly := strings.ReplaceAll(reportPbixLocation, "\\", "\\\\")
+
+	workspaceSuffix := acctest.RandString(6)
+	var report_datasetID string
+	var dataset_datasetID string
+	var dataset2_datasetID string
+
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckPowerbiWorkspaceDestroy,
+		Steps: []resource.TestStep{
+			// first step create a dataset
+			{
+				PreConfig: func() {
+					Copy("./resource_pbix_test_sample1.pbix", datasetPbixLocation)
+					Copy("./resource_pbix_test_sample1.pbix", reportPbixLocation)
+				},
+				Config: fmt.Sprintf(`
+				resource "powerbi_workspace" "test" {
+					name = "Acceptance Test Workspace %s"
+				}
+
+				resource "powerbi_pbix" "dataset_only" {
+					workspace_id = "${powerbi_workspace.test.id}"
+					name = "Acceptance Test dataset PBIX"
+					source = "%s"
+					source_hash = "${filemd5("%s")}"
+					skip_report = true
+				}
+
+				resource "powerbi_pbix" "report_only" {
+					workspace_id = "${powerbi_workspace.test.id}"
+					name = "Acceptance Test report PBIX"
+					source = "%s"
+					source_hash = "${filemd5("%s")}"
+					rebind_dataset_id = powerbi_pbix.dataset_only.dataset_id
+				}
+				`, workspaceSuffix, datasetPbixLocationTfFriendly, datasetPbixLocationTfFriendly, reportPbixLocationTfFriendly, reportPbixLocationTfFriendly),
+				Check: resource.ComposeTestCheckFunc(
+					set("powerbi_pbix.dataset_only", "dataset_id", &dataset_datasetID),
+					testCheckReportDataset("powerbi_pbix.report_only", &dataset_datasetID),
+				),
+			},
+
+			// second step rebind to a different report
+			{
+				Config: fmt.Sprintf(`
+				resource "powerbi_workspace" "test" {
+					name = "Acceptance Test Workspace %s"
+				}
+
+				resource "powerbi_pbix" "dataset_only" {
+					workspace_id = "${powerbi_workspace.test.id}"
+					name = "Acceptance Test dataset PBIX"
+					source = "%s"
+					source_hash = "${filemd5("%s")}"
+					skip_report = true
+				}
+
+				resource "powerbi_pbix" "dataset_only_2" {
+					workspace_id = "${powerbi_workspace.test.id}"
+					name = "Acceptance Test dataset 2 PBIX"
+					source = "%s"
+					source_hash = "${filemd5("%s")}"
+					skip_report = true
+				}
+
+				resource "powerbi_pbix" "report_only" {
+					workspace_id = "${powerbi_workspace.test.id}"
+					name = "Acceptance Test report PBIX"
+					source = "%s"
+					source_hash = "${filemd5("%s")}"
+					rebind_dataset_id = powerbi_pbix.dataset_only_2.dataset_id
+				}
+
+				`, workspaceSuffix, datasetPbixLocationTfFriendly, datasetPbixLocationTfFriendly, datasetPbixLocationTfFriendly, datasetPbixLocationTfFriendly, reportPbixLocationTfFriendly, reportPbixLocationTfFriendly),
+				Check: resource.ComposeTestCheckFunc(
+					set("powerbi_pbix.dataset_only_2", "dataset_id", &dataset2_datasetID),
+					testCheckReportDataset("powerbi_pbix.report_only", &dataset2_datasetID),
+				),
+			},
+
+			// third step remove binding
+			{
+				Config: fmt.Sprintf(`
+				resource "powerbi_workspace" "test" {
+					name = "Acceptance Test Workspace %s"
+				}
+
+				resource "powerbi_pbix" "dataset_only" {
+					workspace_id = "${powerbi_workspace.test.id}"
+					name = "Acceptance Test dataset PBIX"
+					source = "%s"
+					source_hash = "${filemd5("%s")}"
+					skip_report = true
+				}
+
+				resource "powerbi_pbix" "dataset_only_2" {
+					workspace_id = "${powerbi_workspace.test.id}"
+					name = "Acceptance Test dataset 2 PBIX"
+					source = "%s"
+					source_hash = "${filemd5("%s")}"
+					skip_report = true
+				}
+
+				resource "powerbi_pbix" "report_only" {
+					workspace_id = "${powerbi_workspace.test.id}"
+					name = "Acceptance Test report PBIX"
+					source = "%s"
+					source_hash = "${filemd5("%s")}"
+				}
+
+				`, workspaceSuffix, datasetPbixLocationTfFriendly, datasetPbixLocationTfFriendly, datasetPbixLocationTfFriendly, datasetPbixLocationTfFriendly, reportPbixLocationTfFriendly, reportPbixLocationTfFriendly),
+				Check: resource.ComposeTestCheckFunc(
+					set("powerbi_pbix.report_only", "dataset_id", &report_datasetID),
+					testCheckReportDataset("powerbi_pbix.report_only", &report_datasetID),
+				),
+			},
+
+			// fourth step delete the report
+			{
+				Config: fmt.Sprintf(`
+				resource "powerbi_workspace" "test" {
+					name = "Acceptance Test Workspace %s"
+				}
+
+				resource "powerbi_pbix" "dataset_only" {
+					workspace_id = "${powerbi_workspace.test.id}"
+					name = "Acceptance Test dataset PBIX"
+					source = "%s"
+					source_hash = "${filemd5("%s")}"
+					skip_report = true
+				}
+				`, workspaceSuffix, datasetPbixLocationTfFriendly, datasetPbixLocationTfFriendly),
+				Check: resource.ComposeTestCheckFunc(
+					testCheckDatasetExistsInWorkspace("powerbi_workspace.test", "Acceptance Test dataset PBIX"),
+
+					testCheckReportDoesNotExistsInWorkspace("powerbi_workspace.test", "Acceptance Test report PBIX"),
+					testCheckDatasetDoesNotExistsInWorkspace("powerbi_workspace.test", "Acceptance Test report PBIX"),
+
+					testCheckResourceRemoved("powerbi_pbix.report_only"),
+				),
+			},
+
+			// deletes all resources
+			{
+				Config: fmt.Sprintf(`
+				resource "powerbi_workspace" "test" {
+					name = "Acceptance Test Workspace %s"
+				}
+				`, workspaceSuffix),
+				Check: resource.ComposeTestCheckFunc(
+					testCheckDatasetDoesNotExistsInWorkspace("powerbi_workspace.test", "Acceptance Test dataset PBIX"),
+
+					testCheckReportDoesNotExistsInWorkspace("powerbi_workspace.test", "Acceptance Test report PBIX"),
+					testCheckDatasetDoesNotExistsInWorkspace("powerbi_workspace.test", "Acceptance Test report PBIX"),
+
+					testCheckResourceRemoved("powerbi_pbix.dataset_only"),
+					testCheckResourceRemoved("powerbi_pbix.report_only"),
 				),
 			},
 		},
@@ -620,6 +794,30 @@ func testCheckReportDoesNotExistsInWorkspace(workspaceResourceName string, expec
 				return fmt.Errorf("Expecting report to not exist in workspace %v. Found report %v", groupID, report.Name)
 			}
 		}
+		return nil
+	}
+}
+
+func testCheckReportDataset(pbixResourceName string, expectedDatasetId *string) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		reportID, err := getResourceProperty(s, pbixResourceName, "report_id")
+		if err != nil {
+			return err
+		}
+
+		groupID, err := getResourceProperty(s, pbixResourceName, "workspace_id")
+		if err != nil {
+			return err
+		}
+		client := testAccProvider.Meta().(*powerbiapi.Client)
+		report, err := client.GetReportInGroup(groupID, reportID)
+		if err != nil {
+			return err
+		}
+		if report.DatasetID != *expectedDatasetId {
+			return fmt.Errorf("Expecting report %v to have to dataset %v. Found report to have dataset %v", reportID, *expectedDatasetId, report.DatasetID)
+		}
+
 		return nil
 	}
 }
