@@ -5,6 +5,11 @@ import (
 	"net/url"
 )
 
+// RebindReportInGroup represents the request for the RebindReportInGroup API
+type RebindReportInGroupRequest struct {
+	DatasetID string `json:"datasetId"`
+}
+
 // GetReportsInGroupResponse represents the details when getting a report in a group.
 type GetReportsInGroupResponse struct {
 	Value []GetReportsInGroupResponseItem
@@ -12,6 +17,15 @@ type GetReportsInGroupResponse struct {
 
 // GetReportsInGroupResponseItem represents a single dataset
 type GetReportsInGroupResponseItem struct {
+	ID        string
+	Name      string
+	DatasetID string
+	WebURL    string
+	EmbedURL  string
+}
+
+// GetReportsInGroupResponse represents the details when getting a report in a group.
+type GetReportInGroupResponse struct {
 	ID        string
 	Name      string
 	DatasetID string
@@ -29,11 +43,30 @@ func (client *Client) GetReportsInGroup(groupID string) (*GetReportsInGroupRespo
 	return &respObj, err
 }
 
+// GetReportInGroup returns a report that exists within a group
+func (client *Client) GetReportInGroup(groupID string, reportID string) (*GetReportInGroupResponse, error) {
+
+	var respObj GetReportInGroupResponse
+	url := fmt.Sprintf("https://api.powerbi.com/v1.0/myorg/groups/%s/reports/%s", url.PathEscape(groupID), url.PathEscape(reportID))
+	err := client.doJSON("GET", url, nil, &respObj)
+
+	return &respObj, err
+}
+
 // DeleteReportInGroup deletes a report that exists within a group.
 func (client *Client) DeleteReportInGroup(groupID string, reportID string) error {
 
 	url := fmt.Sprintf("https://api.powerbi.com/v1.0/myorg/groups/%s/reports/%s", url.PathEscape(groupID), url.PathEscape(reportID))
 	err := client.doJSON("DELETE", url, nil, nil)
+
+	return err
+}
+
+// RebindReportInGroup rebinds the specified report from the specified group to the requested dataset.
+func (client *Client) RebindReportInGroup(groupID string, reportID string, request RebindReportInGroupRequest) error {
+
+	url := fmt.Sprintf("https://api.powerbi.com/v1.0/myorg/groups/%s/reports/%s/Rebind", url.PathEscape(groupID), url.PathEscape(reportID))
+	err := client.doJSON("POST", url, request, nil)
 
 	return err
 }
