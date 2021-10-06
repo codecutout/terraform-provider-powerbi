@@ -51,7 +51,7 @@ jobs:
     timeout-minutes: 15
     strategy:
       fail-fast: false
-      max-parallel: 2 #limits on the PowerBI API can Too Many Request errors in the tests
+      max-parallel: 1 #limits on the PowerBI API can Too Many Request errors in the tests
       matrix:
 
         # list whatever Terraform versions here you would like to support

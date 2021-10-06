@@ -2,12 +2,14 @@ package powerbiapi
 
 import (
 	"bytes"
+	"crypto/tls"
 	"encoding/json"
 	"io"
 	"io/ioutil"
 	"mime/multipart"
 	"net/http"
 	"net/textproto"
+	"time"
 
 	"github.com/hashicorp/go-cleanhttp"
 )
@@ -33,20 +35,32 @@ func NewClientWithClientCredentialAuth(tenant string, clientID string, clientSec
 }
 
 func newClient(getAuthToken func(httpClient *http.Client) (string, error)) (*Client, error) {
-	httpClient := cleanhttp.DefaultClient()
+
+	// PowerBI has lots of intermittant TLS handshake issues, these settings
+	// seem to reduce the amount of issues encountered
+	defaultTransport := cleanhttp.DefaultPooledTransport()
+	defaultTransport.TLSHandshakeTimeout = 60 * time.Second
+	defaultTransport.TLSClientConfig = &tls.Config{
+		MinVersion: tls.VersionTLS12,
+	}
 
 	// auth
-	httpClient.Transport = newBearerTokenRoundTripper(
-		getAuthToken,
-		// error
-		newErrorOnUnsuccessfulRoundTripper(
-			// retry
-			newRetryTooManyRequestsRoundTripper(
-				// actual call
-				httpClient.Transport,
+	httpClient := &http.Client{
+		Transport: newBearerTokenRoundTripper(
+			getAuthToken,
+			// error
+			newErrorOnUnsuccessfulRoundTripper(
+				// this is crazy we need to retry 500 and 400 errors, but the API intermittently returns them
+				newRetryIntermittentErrorRoundTripper(
+					// retry too many requests
+					newRetryTooManyRequestsRoundTripper(
+						// actual call
+						defaultTransport,
+					),
+				),
 			),
 		),
-	)
+	}
 
 	return &Client{
 		httpClient,
