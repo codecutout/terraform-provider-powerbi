@@ -170,6 +170,13 @@ func createPBIX(d *schema.ResourceData, meta interface{}) error {
 		if err != nil {
 			return err
 		}
+
+		// As the rebind operation can change values such as the dataset_id
+		// we will read the import here once again
+		err = readImport(d, meta, d.Timeout(schema.TimeoutCreate))
+		if err != nil {
+			return err
+		}
 	}
 
 	d.Partial(false)
@@ -232,6 +239,13 @@ func updatePBIX(d *schema.ResourceData, meta interface{}) error {
 			return err
 		}
 
+		// As the rebind operation can change values such as the dataset_id
+		// we will read the import here once again
+		err = readImport(d, meta, d.Timeout(schema.TimeoutCreate))
+		if err != nil {
+			return err
+		}
+
 		d.Partial(false)
 
 		return nil
@@ -239,6 +253,13 @@ func updatePBIX(d *schema.ResourceData, meta interface{}) error {
 
 	if d.HasChange("rebind_dataset_id") {
 		err := rebindPBIXDataset(d, meta)
+		if err != nil {
+			return err
+		}
+
+		// As the rebind operation can change values such as the dataset_id
+		// we will read the import here once again
+		err = readImport(d, meta, d.Timeout(schema.TimeoutCreate))
 		if err != nil {
 			return err
 		}
@@ -316,20 +337,16 @@ func readImport(d *schema.ResourceData, meta interface{}, timeoutForSuccessfulIm
 	d.SetPartial("name")
 	d.Set("name", im.Name)
 
-	// powerbi imports can be modified by some operations (such as rebind)
-	// in order to keep reference to the original report and original dataset
-	// we will only look them up once after creation
-	if d.IsNewResource() {
-		if len(im.Reports) >= 1 {
-			d.SetPartial("report_id")
-			d.Set("report_id", im.Reports[0].ID)
-		}
-
-		if len(im.Datasets) >= 1 {
-			d.SetPartial("dataset_id")
-			d.Set("dataset_id", im.Datasets[0].ID)
-		}
+	if len(im.Reports) >= 1 {
+		d.SetPartial("report_id")
+		d.Set("report_id", im.Reports[0].ID)
 	}
+
+	if len(im.Datasets) >= 1 {
+		d.SetPartial("dataset_id")
+		d.Set("dataset_id", im.Datasets[0].ID)
+	}
+
 	return nil
 }
 
