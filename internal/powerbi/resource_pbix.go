@@ -207,7 +207,13 @@ func updatePBIX(d *schema.ResourceData, meta interface{}) error {
 
 		d.Partial(true)
 
-		err := createImport(d, meta)
+		// Imports do not update rebinded datasets, so we unbind before doing the import
+		err := unbindPBIXDataset(d, meta)
+		if err != nil {
+			return err
+		}
+
+		err = createImport(d, meta)
 		if err != nil {
 			return err
 		}
@@ -238,7 +244,12 @@ func updatePBIX(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	if d.HasChange("rebind_dataset_id") {
-		err := rebindPBIXDataset(d, meta)
+		err := unbindPBIXDataset(d, meta)
+		if err != nil {
+			return err
+		}
+
+		err = rebindPBIXDataset(d, meta)
 		if err != nil {
 			return err
 		}
@@ -503,11 +514,6 @@ func rebindPBIXDataset(d *schema.ResourceData, meta interface{}) error {
 	rebindDatasetID, rebindDatasetOk := d.GetOk("rebind_dataset_id")
 	reportID, reportOk := d.GetOk("report_id")
 
-	// if rebind_dataset_id has been removed we will bind back to the original dataset
-	if !rebindDatasetOk {
-		rebindDatasetID, rebindDatasetOk = d.GetOk("dataset_id")
-	}
-
 	// only run this if rebind_dataset_id and report_id are available
 	if !rebindDatasetOk || !reportOk {
 		return nil
@@ -515,5 +521,25 @@ func rebindPBIXDataset(d *schema.ResourceData, meta interface{}) error {
 
 	return client.RebindReportInGroup(groupID, reportID.(string), powerbiapi.RebindReportInGroupRequest{
 		DatasetID: rebindDatasetID.(string),
+	})
+}
+
+func unbindPBIXDataset(d *schema.ResourceData, meta interface{}) error {
+	client := meta.(*powerbiapi.Client)
+
+	groupID := d.Get("workspace_id").(string)
+	datasetID, datasetOk := d.GetOk("dataset_id")
+	reportID, reportOk := d.GetOk("report_id")
+	_, rebindDatasetOk := d.GetOk("rebind_dataset_id")
+
+	// Only unbind if we either know we are rebinded, or rebinding has changed and we might be rebinded
+	isRebinded := rebindDatasetOk || d.HasChange("rebind_dataset_id")
+
+	if !isRebinded || !datasetOk || !reportOk {
+		return nil
+	}
+
+	return client.RebindReportInGroup(groupID, reportID.(string), powerbiapi.RebindReportInGroupRequest{
+		DatasetID: datasetID.(string),
 	})
 }
