@@ -113,4 +113,5 @@ resource "powerbi_pbix" "example_report" {
 <!-- docgen:ComputedParameters -->
 * `dataset_id` - The ID for the dataset that was deployed as part of the PBIX.
 * `report_id` - The ID for the report that was deployed as part of the PBIX.
+* `report_original_dataset_id` - The dataset to which the report that was deployed is pointing. This is primarily used to allow reverting rebinded datasets back to the original source.
 <!-- /docgen -->

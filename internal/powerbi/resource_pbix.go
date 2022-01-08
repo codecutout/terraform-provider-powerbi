@@ -66,6 +66,11 @@ func ResourcePBIX() *schema.Resource {
 				Optional:      true,
 				ConflictsWith: []string{"parameter", "datasource"},
 			},
+			"report_original_dataset_id": {
+				Type:        schema.TypeString,
+				Description: "The dataset to which the report that was deployed is pointing. This is primarily used to allow reverting rebinded datasets back to the original source.",
+				Computed:    true,
+			},
 			"parameter": {
 				Type:        schema.TypeSet,
 				Description: "Parameters to be configured on the PBIX dataset. These can be updated without requiring reuploading the PBIX. Any parameters not mentioned will not be tracked or updated",
@@ -207,7 +212,13 @@ func updatePBIX(d *schema.ResourceData, meta interface{}) error {
 
 		d.Partial(true)
 
-		err := createImport(d, meta)
+		// Imports do not update rebinded datasets, so we unbind before doing the import
+		err := unbindPBIXDataset(d, meta)
+		if err != nil {
+			return err
+		}
+
+		err = createImport(d, meta)
 		if err != nil {
 			return err
 		}
@@ -238,7 +249,12 @@ func updatePBIX(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	if d.HasChange("rebind_dataset_id") {
-		err := rebindPBIXDataset(d, meta)
+		err := unbindPBIXDataset(d, meta)
+		if err != nil {
+			return err
+		}
+
+		err = rebindPBIXDataset(d, meta)
 		if err != nil {
 			return err
 		}
@@ -323,6 +339,13 @@ func readImport(d *schema.ResourceData, meta interface{}, timeoutForSuccessfulIm
 		if len(im.Reports) >= 1 {
 			d.SetPartial("report_id")
 			d.Set("report_id", im.Reports[0].ID)
+
+			report, err := client.GetReportInGroup(groupID, im.Reports[0].ID)
+			if err != nil {
+				return err
+			}
+			d.SetPartial("report_original_dataset_id")
+			d.Set("report_original_dataset_id", report.DatasetID)
 		}
 
 		if len(im.Datasets) >= 1 {
@@ -503,11 +526,6 @@ func rebindPBIXDataset(d *schema.ResourceData, meta interface{}) error {
 	rebindDatasetID, rebindDatasetOk := d.GetOk("rebind_dataset_id")
 	reportID, reportOk := d.GetOk("report_id")
 
-	// if rebind_dataset_id has been removed we will bind back to the original dataset
-	if !rebindDatasetOk {
-		rebindDatasetID, rebindDatasetOk = d.GetOk("dataset_id")
-	}
-
 	// only run this if rebind_dataset_id and report_id are available
 	if !rebindDatasetOk || !reportOk {
 		return nil
@@ -515,5 +533,25 @@ func rebindPBIXDataset(d *schema.ResourceData, meta interface{}) error {
 
 	return client.RebindReportInGroup(groupID, reportID.(string), powerbiapi.RebindReportInGroupRequest{
 		DatasetID: rebindDatasetID.(string),
+	})
+}
+
+func unbindPBIXDataset(d *schema.ResourceData, meta interface{}) error {
+	client := meta.(*powerbiapi.Client)
+
+	groupID := d.Get("workspace_id").(string)
+	originalDatasetID, datasetOk := d.GetOk("report_original_dataset_id")
+	reportID, reportOk := d.GetOk("report_id")
+	_, rebindDatasetOk := d.GetOk("rebind_dataset_id")
+
+	// Only unbind if we either know we are rebinded, or rebinding has changed and we might be rebinded
+	isRebinded := rebindDatasetOk || d.HasChange("rebind_dataset_id")
+
+	if !isRebinded || !datasetOk || !reportOk {
+		return nil
+	}
+
+	return client.RebindReportInGroup(groupID, reportID.(string), powerbiapi.RebindReportInGroupRequest{
+		DatasetID: originalDatasetID.(string),
 	})
 }

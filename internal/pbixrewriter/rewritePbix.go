@@ -2,7 +2,6 @@ package pbixrewriter
 
 import (
 	"archive/zip"
-	"fmt"
 	"io"
 	"os"
 )
@@ -61,11 +60,10 @@ func buildWriterPipelineFunc(writer *zip.Writer) PipelineFunc {
 		if err != nil {
 			return err
 		}
-		x, err := io.Copy(outputItemWriter, reader)
+		_, err = io.Copy(outputItemWriter, reader)
 		if err != nil {
 			return err
 		}
-		fmt.Printf("%s written %d bytes\n", header.Name, x)
 		return nil
 	}
 }
