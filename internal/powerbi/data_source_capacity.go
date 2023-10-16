@@ -47,6 +47,7 @@ func dataSourceCapacityRead(d *schema.ResourceData, meta interface{}) error {
 		for _, capacityObj = range capacityList.Value {
 			if capacityObj.DisplayName == name {
 				capacityObjFound = true
+				break
 			}
 		}
 	}
